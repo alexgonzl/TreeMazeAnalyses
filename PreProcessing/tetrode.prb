@@ -1,0 +1,14 @@
+total_nb_channels = 4
+radius=100
+channel_groups = {
+    1:
+        {
+            'channels': list(range(4)),
+            'geometry': {
+                0: (0, 0),
+                1: (0, 20),
+                2: (20,0),
+                3: (20, 20),
+            }
+    }
+}

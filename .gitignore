@@ -1,0 +1,9 @@
+# ignore old folder and any .mat data
+old/
+old/*
+*.pyc
+__pycache__/
+*.mat
+*.DS_Store
+*.ipynb_checkpoints
+*.ipynb_checkpoints/*
