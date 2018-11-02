@@ -1,6 +1,6 @@
 ###############################################################################
 ###############################################################################
-# CSC_Wrapper.py
+# pre_process_tetrode.py
 # Collection of routines and subroutines for processing raw neuralynx CSC files.
 #
 # Dependencies:
@@ -24,13 +24,12 @@ import csv
 import sys
 import h5py
 
-def get_process_save_tetrode(csc_files, save_path, save_format='npy', AmpPercentileThr=0.975):
+def get_process_save_tetrode(tetrode_files, save_path, save_format='npy', AmpPercentileThr=0.975):
     ''' This function takes a list of neuralynx continously sampled channel (csc) files,
      performs initial preprocessing, data QA, and saves all the channels from a tetrode together.
      The files should come from the same recording, have the same length, and follow the naming
      format. The naming format is as follows:
      Tetrode 1 files -> CSC1a.csc, CSC1b.csc, CSC1c.csc, CSC1d.csc
-     Tetrode 2 files -> CSC2a.csc, CSC2b.csc, CSC2c.csc, CSC2d.csc
 
      This function can be used in parallel by having the csc_list only include a
      subset of tetrodes, and calling it multiple times to complete the set.
@@ -72,27 +71,6 @@ def get_process_save_tetrode(csc_files, save_path, save_format='npy', AmpPercent
     except:
         error('Filters not found in the working directory. Aborting.')
 
-    # improvement.
-    # perhaps this should be moved and only input in the specific file names for the tetrode.
-    df = pd.DataFrame(csc_files,columns=['filenames','filename_stem','full_file_path','mod_time'])
-    tetrodeID=[]
-    tetrodeChanID=[]
-    for uniqueID in df.filenames:
-        match = re.match(r"([a-z]+)([0-9]+)([a-d])", uniqueID, re.I)
-        if match:
-            items = match.groups()
-
-        tetrodeID.append(int(items[1]))
-        tetrodeChanID.append(items[2])
-
-    # add columns to the CSC data frame identifying tetrode and tetrode channel ID
-    df['tetrodeIDs']=tetrodeID
-    df['tetrodeChanIDs']=tetrodeChanID
-
-    tetrodeUniqueIDs = np.unique(tetrodeID)
-    nTetrodes = np.len(tetrodeUniqueIDs)
-
-    # get some general information of the csc_files from the header
     id1 = np.where((df["tetrodeIDs"]== 1) & (df["tetrodeChanIDs"] == 'a'))[0][0]
     h1  = get_header(df.loc[id1].full_file_path)
     sig,time_stamps = get_csc(df.loc[id1].full_file_path)
