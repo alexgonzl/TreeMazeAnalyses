@@ -62,14 +62,16 @@ if __name__ == '__main__':
                         else:
                             if not (session / csc).stat().st_size>minFileSize:
                                 chAbsentFlag = True
-
-                        if not chAbsentFlag:
-                            Files[taskID] = dict_entry('tt',csc,session,sp,tt)
-                            taskID+=1
                     except:
+                        chAbsentFlag = True
                         print('Could not assign task to {}'.format(csc))
                         print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
                         continue
+
+                if not chAbsentFlag:
+                    Files[taskID] = dict_entry('tt',TTs[tt],session,sp,tt)
+                    taskID+=1
+
 
             # If invalid record
             for csc in session.glob('CSC[0-9]*[a-d]_*.ncs'):
