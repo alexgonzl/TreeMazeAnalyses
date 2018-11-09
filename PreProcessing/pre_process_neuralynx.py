@@ -17,7 +17,6 @@ import numpy as np
 import time, datetime
 from scipy import signal
 from robust_stats import *
-from get_neuralynx import get_csc, get_header
 from pathlib import Path
 import csv
 import sys
@@ -147,7 +146,33 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
         save_tetrode(data,sp,tt_id,save_format)
         save_tetrode_info(info,tt_id,sp)
 
-######################## Auxiliary Functions ##########################
+def get_save_events(task):
+    fp = Path(task['filepath'])
+    ev_file = task['filename']
+    sp = Path(task['savepath'])
+
+    ev = get_events(fp/ev_file)
+    with h5py.File(str(sp / 'ev')+'.h5', 'w') as hf:
+        for k,v in ev.items():
+            hf.create_dataset(k,  data=v)
+
+def get_save_tracking(task):
+
+    fp = Path(task['filepath'])
+    vt_file = task['filename']
+    sp = Path(task['savepath'])
+
+    t,x,y = get_position(fp/vt_file)
+    with h5py.File(str(sp / 'vt')+'.h5', 'w') as hf:
+        hf.create_dataset("t",  data=t)
+        hf.create_dataset("x",  data=x)
+        hf.create_dataset("y",  data=y)
+
+################################################################################
+################################################################################
+######################## Auxiliary Functions ###################################
+################################################################################
+################################################################################
 def save_tetrode(tetrode,save_path,tid,save_format):
     if save_format=='h5':
         with h5py.File(str(save_path / 'tt_')+str(tid)+'.h5', 'w') as hf:
@@ -188,7 +213,6 @@ def get_file_date(fn):
     info=fn.stat()
     ymd=time.localtime(info.st_mtime)[0:3]
     return "%s_%s_%s" % (ymd[1],ymd[2],ymd[0])
-
 
 def get_csc(fn):
     ''' returns signal in uV and time stamps'''
@@ -243,18 +267,3 @@ def get_events(fn):
 
     ev=nept.load_events(fn,events)
     return ev
-
-def get_save_events(ev_files,sp):
-    for ev_file in ev_files:
-        ev = get_events(ev_file[2])
-        with h5py.File(str(sp / ev_file[1])+'.h5', 'w') as hf:
-            for k,v in ev.items():
-                hf.create_dataset(k,  data=v)
-
-def get_save_tracking(vt_files,sp):
-    for vt_file in vt_files:
-        t,x,y = get_position(vt_file[2])
-        with h5py.File(str(sp / vt_file[1])+'.h5', 'w') as hf:
-            hf.create_dataset("t",  data=t)
-            hf.create_dataset("x",  data=x)
-            hf.create_dataset("y",  data=y)

@@ -1,0 +1,206 @@
+{
+    "1": {
+        "type": "ev",
+        "filename": "Events.nev",
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results"
+    },
+    "2": {
+        "type": "vt",
+        "filename": "VT1.nvt",
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results"
+    },
+    "3": {
+        "type": "tt",
+        "filename": [
+            "CSC1a.ncs",
+            "CSC1b.ncs",
+            "CSC1c.ncs",
+            "CSC1d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "1"
+    },
+    "4": {
+        "type": "tt",
+        "filename": [
+            "CSC2a.ncs",
+            "CSC2b.ncs",
+            "CSC2c.ncs",
+            "CSC2d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "2"
+    },
+    "5": {
+        "type": "tt",
+        "filename": [
+            "CSC3a.ncs",
+            "CSC3b.ncs",
+            "CSC3c.ncs",
+            "CSC3d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "3"
+    },
+    "6": {
+        "type": "tt",
+        "filename": [
+            "CSC4a.ncs",
+            "CSC4b.ncs",
+            "CSC4c.ncs",
+            "CSC4d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "4"
+    },
+    "7": {
+        "type": "tt",
+        "filename": [
+            "CSC5a.ncs",
+            "CSC5b.ncs",
+            "CSC5c.ncs",
+            "CSC5d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "5"
+    },
+    "8": {
+        "type": "tt",
+        "filename": [
+            "CSC6a.ncs",
+            "CSC6b.ncs",
+            "CSC6c.ncs",
+            "CSC6d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "6"
+    },
+    "9": {
+        "type": "tt",
+        "filename": [
+            "CSC7a.ncs",
+            "CSC7b.ncs",
+            "CSC7c.ncs",
+            "CSC7d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "7"
+    },
+    "10": {
+        "type": "tt",
+        "filename": [
+            "CSC8a.ncs",
+            "CSC8b.ncs",
+            "CSC8c.ncs",
+            "CSC8d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "8"
+    },
+    "11": {
+        "type": "tt",
+        "filename": [
+            "CSC9a.ncs",
+            "CSC9b.ncs",
+            "CSC9c.ncs",
+            "CSC9d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "9"
+    },
+    "12": {
+        "type": "tt",
+        "filename": [
+            "CSC10a.ncs",
+            "CSC10b.ncs",
+            "CSC10c.ncs",
+            "CSC10d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "10"
+    },
+    "13": {
+        "type": "tt",
+        "filename": [
+            "CSC11a.ncs",
+            "CSC11b.ncs",
+            "CSC11c.ncs",
+            "CSC11d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "11"
+    },
+    "14": {
+        "type": "tt",
+        "filename": [
+            "CSC12a.ncs",
+            "CSC12b.ncs",
+            "CSC12c.ncs",
+            "CSC12d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "12"
+    },
+    "15": {
+        "type": "tt",
+        "filename": [
+            "CSC13a.ncs",
+            "CSC13b.ncs",
+            "CSC13c.ncs",
+            "CSC13d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "13"
+    },
+    "16": {
+        "type": "tt",
+        "filename": [
+            "CSC14a.ncs",
+            "CSC14b.ncs",
+            "CSC14c.ncs",
+            "CSC14d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "14"
+    },
+    "17": {
+        "type": "tt",
+        "filename": [
+            "CSC15a.ncs",
+            "CSC15b.ncs",
+            "CSC15c.ncs",
+            "CSC15d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "15"
+    },
+    "18": {
+        "type": "tt",
+        "filename": [
+            "CSC16a.ncs",
+            "CSC16b.ncs",
+            "CSC16c.ncs",
+            "CSC16d.ncs"
+        ],
+        "filepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418",
+        "savepath": "/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results",
+        "tt_id": "16"
+    }
+}
