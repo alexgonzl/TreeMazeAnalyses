@@ -20,7 +20,7 @@ from robust_stats import *
 from pathlib import Path
 import csv
 import sys
-import h5py
+import h5py, json
 import nept
 
 def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, overwriteFlag=1):
@@ -63,44 +63,42 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
 
     '''
 
-    # Filter Parameters (must excist in the same directory)
-    try:
-        b = np.fromfile('filt_b.dat',dtype='float',sep=',')
-        a = np.fromfile('filt_a.dat',dtype='float',sep=',')
-    except:
-        sys.exit('Filters not found in the working directory. Aborting.')
-
-    date_obj = datetime.date.today()
-    date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
-
-    # Unpack the tetrode information.
-    tt_id = task['tt_id']
-    fp = Path(task['filepath'])
-    csc_files = task['filename']
-    sp = Path(task['savepath'])
-
-    # load first channel
-    f =[]
-    f.append(fp/csc_files[0])
-    try:
-        h1  = get_header(f[0])
-        sig,time_stamps = get_csc(f[0])
-        nSamps = len(sig)
-    except:
-        sys.exit('Could not read first channel. Aborting.')
-
-    # save time stamps
-    save_timestamps(time_stamps, sp, save_format)
-    del time_stamps
-
-    # create information file
-    info  = {'tetrodeID':[tt_id],'RefChan':h1['RefChan'],
-    'fs':h1['fs'],'AmpPercentileThr':AmpPercentileThr,'nSamps':nSamps, 'date_processed': date_str}
-
-    data = np.zeros((nSamps,4),dtype=np.float32)
-    cnt =0
-
+# Unpack the tetrode information.
+tt_id = task['tt_id']
+fp = Path(task['filepath'])
+csc_files = task['filename']
+sp = Path(task['savepath'])
     if not (sp / 'tt_{}.npy'.format(tt_id)).exists() or overwriteFlag :
+        # Filter Parameters (must excist in the same directory)
+        try:
+            b = np.fromfile('filt_b.dat',dtype='float',sep=',')
+            a = np.fromfile('filt_a.dat',dtype='float',sep=',')
+        except:
+            sys.exit('Filters not found in the working directory. Aborting.')
+
+        date_obj = datetime.date.today()
+        date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
+
+        # load first channel
+        f =[]
+        f.append(fp/csc_files[0])
+        try:
+            h1  = get_header(f[0])
+            sig,time_stamps = get_csc(f[0])
+            nSamps = len(sig)
+        except:
+            sys.exit('Could not read first channel. Aborting.')
+
+        # save time stamps
+        save_timestamps(time_stamps, sp, save_format)
+        del time_stamps
+
+        # create information file
+        info  = {'tetrodeID':[tt_id],'RefChan':h1['RefChan'],
+        'fs':h1['fs'],'AmpPercentileThr':AmpPercentileThr,'nSamps':nSamps, 'date_processed': date_str}
+
+        data = np.zeros((nSamps,4),dtype=np.float32)
+        cnt =0
         for chan_id in np.arange(0,4):
             print("\nProcessing Tetrode {} Channel {}".format(tt_id,chan_id))
             # load channel data
@@ -113,7 +111,7 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
 
             # get channel specific info
             h2  = get_header(f[chan_id])
-            info['AD'+'_'+chan_id_str]=h2['AD']
+            info['AD'+'_'+chan_id_str]=float(h2['AD'])
             info['InputRange'+'_'+chan_id_str]=h2['InputRange']
             info['AmpRejThr'+'_'+chan_id_str] = h2['InputRange']*AmpPercentileThr
             info['date_created'+'_'+chan_id_str]=get_file_date(f[chan_id])
@@ -122,6 +120,7 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
             ## Step 1. Filter.
             t1=time.time()
             fsig = FilterCSC(sig,b,a)
+            fsig=sig
             t2=time.time()
             print("Time to filter the signal %0.2f" % (t2-t1))
 
@@ -145,28 +144,34 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
             print('Processing TT {} Channel {} completed.\n'.format(tt_id,chan_id))
         save_tetrode(data,sp,tt_id,save_format)
         save_tetrode_info(info,tt_id,sp)
+    else:
+        print('File exists and overwrite = false ')
 
-def get_save_events(task):
+def get_save_events(task,overwriteFlag=0):
     fp = Path(task['filepath'])
     ev_file = task['filename']
     sp = Path(task['savepath'])
 
-    ev = get_events(fp/ev_file)
-    with h5py.File(str(sp / 'ev')+'.h5', 'w') as hf:
-        for k,v in ev.items():
-            hf.create_dataset(k,  data=v)
+    if not (sp / 'ev.h5').exists() or overwriteFlag:
+        ev = get_events(fp/ev_file)
+        with h5py.File(str(sp / 'ev')+'.h5', 'w') as hf:
+            for k,v in ev.items():
+                hf.create_dataset(k,  data=v)
+    else:
+        print('File exists and overwrite = false ')
 
-def get_save_tracking(task):
-
+def get_save_tracking(task,overwriteFlag=0):
     fp = Path(task['filepath'])
     vt_file = task['filename']
     sp = Path(task['savepath'])
-
-    t,x,y = get_position(fp/vt_file)
-    with h5py.File(str(sp / 'vt')+'.h5', 'w') as hf:
-        hf.create_dataset("t",  data=t)
-        hf.create_dataset("x",  data=x)
-        hf.create_dataset("y",  data=y)
+    if not (sp / 'vt.h5').exists() or overwriteFlag :
+        t,x,y = get_position(fp/vt_file)
+        with h5py.File(str(sp / 'vt')+'.h5', 'w') as hf:
+            hf.create_dataset("t",  data=t)
+            hf.create_dataset("x",  data=x)
+            hf.create_dataset("y",  data=y)
+    else:
+        print('File exists and overwrite = false ')
 
 ################################################################################
 ################################################################################
@@ -185,11 +190,13 @@ def save_tetrode(tetrode,save_path,tid,save_format):
     print('')
 
 def save_tetrode_info(header,tid,save_path):
-    with open(str(save_path / 'header_tt')+str(tid),'w') as f:
-        w = csv.writer(f)
-        for key, value in header.items():
-            print(key,value)
-            w.writerow([key, value])
+    # with open(str(save_path / 'header_tt')+str(tid),'w') as f:
+    #     w = csv.writer(f)
+    #     for key, value in header.items():
+    #         print(key,value)
+    #         w.writerow([key, value])
+    with open(str(save_path/'header_tt.json')+str(tid), 'w') as f:
+        json.dump(header, f ,indent=4)
 
 def save_timestamps(stamps, save_path, save_format):
     if save_format=='h5':
