@@ -1,15 +1,16 @@
 #!/bin/bash
 
 #SBATCH --job-name=testbatch 
-#SBATCH --output=testbatch.%j.out
-#SBATCH --error=testbatch.%j.err
-#SBATCH --ntasks=8
+#SBATCH --output=$SCRATCH/bashlogs/out/testbatch.%a.out
+#SBATCH --error=$SCRATCH/bashlogs/err/testbatch.%a.err
+#SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-core=1
 #SBATCH --ncpus-per-task=4
-#SBATCH --mem=64G
+#SBATCH --time=05:00:00
+#SBATCH --mem=16G
 #SBATCH --partition=giocomo,owners
+#SBATCH -a 1-8
 
 ml python/3.6.1
 
-srun python3 P
+python3 pyClusterBatch.py -t $SLURM_ARRAY_TASK_ID -f PreProcessingTable_Li_11_9_2018.json
