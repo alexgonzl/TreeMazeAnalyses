@@ -194,7 +194,7 @@ def save_tetrode_info(header,tid,save_path):
     #     for key, value in header.items():
     #         print(key,value)
     #         w.writerow([key, value])
-    with open(str(save_path/'header_tt.json')+str(tid), 'w') as f:
+    with open(str(save_path/'header_tt')+str(tid)+'.json'), 'w') as f:
         json.dump(header, f ,indent=4)
 
 def save_timestamps(stamps, save_path, save_format):
