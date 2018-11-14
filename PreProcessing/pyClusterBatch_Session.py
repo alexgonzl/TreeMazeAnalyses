@@ -3,6 +3,7 @@ warnings.simplefilter(action='ignore',category=FutureWarning)
 from pathlib import Path
 import sys, getopt
 import json, time
+#from pre_process_neuralynx import get_process_save_tetrode
 
 # Store taskID and TaskFile
 taskID=-1
@@ -37,12 +38,13 @@ try:
 except:
     sys.exit('Could not get Task Table. Aborting.')
 
-task = task_table[taskIDstr]
-nFiles = task['nFiles']
+session = task_table[taskIDstr]
+nFiles = session['nFiles']
+task_list = session['Files']
 for file in range(1,nFiles+1):
     try:
-        t1=tt1=time.ti
-        print(task)
+        task=task_list[str(file)]
+        t1=time.time()
         task_type = task['type']
         if task_type=='tt':
             print("Processing Tetrode # {}".format(task['tt_id']))

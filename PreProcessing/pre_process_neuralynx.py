@@ -23,7 +23,7 @@ import sys
 import h5py, json
 import nept
 
-def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, overwriteFlag=1):
+def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, overwriteFlag=0):
     ''' This function takes a list of neuralynx continously sampled channel (csc) files,
      performs initial preprocessing, data QA, and saves all the channels from a tetrode together.
      The files should come from the same recording, have the same length, and follow the naming
@@ -63,11 +63,10 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
 
     '''
 
-# Unpack the tetrode information.
-tt_id = task['tt_id']
-fp = Path(task['filepath'])
-csc_files = task['filename']
-sp = Path(task['savepath'])
+    # Unpack the tetrode information.
+    tt_id = task['tt_id']
+    csc_files = task['filenames']
+    sp = Path(task['sp'])
     if not (sp / 'tt_{}.npy'.format(tt_id)).exists() or overwriteFlag :
         # Filter Parameters (must excist in the same directory)
         try:
@@ -81,7 +80,7 @@ sp = Path(task['savepath'])
 
         # load first channel
         f =[]
-        f.append(fp/csc_files[0])
+        f.append(csc_files[0])
         try:
             h1  = get_header(f[0])
             sig,time_stamps = get_csc(f[0])
@@ -103,7 +102,7 @@ sp = Path(task['savepath'])
             print("\nProcessing Tetrode {} Channel {}".format(tt_id,chan_id))
             # load channel data
             if chan_id>0:
-                f.append(fp/csc_files[chan_id])
+                f.append(csc_files[chan_id])
                 # Load signal
                 sig,temp = get_csc(f[chan_id])
                 del temp
