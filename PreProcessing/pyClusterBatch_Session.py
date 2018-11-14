@@ -39,9 +39,10 @@ except:
 
 task = task_table[taskIDstr]
 nFiles = task['nFiles']
-for file in np.arange(1,nFiles+1):
+for file in range(1,nFiles+1):
     try:
-        t1=time.time()
+        t1=tt1=time.ti
+        print(task)
         task_type = task['type']
         if task_type=='tt':
             print("Processing Tetrode # {}".format(task['tt_id']))

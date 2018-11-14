@@ -115,9 +115,10 @@ if __name__ == '__main__':
                 except:
                     print('Could not assign task to {}'.format(ev))
                     continue
-            if len(nFiles)>0:
+            if len(Files)>0:
                 Sessions[SessionCnt] = session_entry(session,Files,sp)
             else:
+                print('Empty Session {}, discarding.'.format(str(session)))
                 SessionCnt-=1
         except:
             print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
