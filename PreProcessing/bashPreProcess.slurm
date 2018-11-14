@@ -8,7 +8,7 @@
 #SBATCH --time=04:00:00
 #SBATCH --mem=8G
 #SBATCH --partition=giocomo
-#SBATCH -a 1-44%8
+#SBATCH --array=1-44%8
 
 ml python/3.6.1
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID

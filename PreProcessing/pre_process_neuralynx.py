@@ -147,12 +147,11 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
         print('File exists and overwrite = false ')
 
 def get_save_events(task,overwriteFlag=0):
-    fp = Path(task['filepath'])
-    ev_file = task['filename']
-    sp = Path(task['savepath'])
+    ev_file = task['filenames']
+    sp = Path(task['sp'])
 
     if not (sp / 'ev.h5').exists() or overwriteFlag:
-        ev = get_events(fp/ev_file)
+        ev = get_events(ev_file)
         with h5py.File(str(sp / 'ev')+'.h5', 'w') as hf:
             for k,v in ev.items():
                 hf.create_dataset(k,  data=v)
@@ -160,9 +159,8 @@ def get_save_events(task,overwriteFlag=0):
         print('File exists and overwrite = false ')
 
 def get_save_tracking(task,overwriteFlag=0):
-    fp = Path(task['filepath'])
-    vt_file = task['filename']
-    sp = Path(task['savepath'])
+    vt_file = task['filenames']
+    sp = Path(task['sp'])
     if not (sp / 'vt.h5').exists() or overwriteFlag :
         t,x,y = get_position(fp/vt_file)
         with h5py.File(str(sp / 'vt')+'.h5', 'w') as hf:
@@ -194,7 +192,7 @@ def save_tetrode_info(header,tid,save_path):
     #     for key, value in header.items():
     #         print(key,value)
     #         w.writerow([key, value])
-    with open(str(save_path/'header_tt')+str(tid)+'.json'), 'w') as f:
+    with open(str(save_path/'header_tt')+str(tid)+'.json', 'w') as f:
         json.dump(header, f ,indent=4)
 
 def save_timestamps(stamps, save_path, save_format):
