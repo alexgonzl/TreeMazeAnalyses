@@ -41,9 +41,9 @@ except:
 session = task_table[taskIDstr]
 nFiles = session['nFiles']
 task_list = session['Files']
-for file in range(1,nFiles+1):
+for file in task_list.keys():
     try:
-        task=task_list[str(file)]
+        task=task_list[file]
         t1=time.time()
         task_type = task['type']
         if task_type=='tt':

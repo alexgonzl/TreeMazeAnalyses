@@ -162,7 +162,7 @@ def get_save_tracking(task,overwriteFlag=0):
     vt_file = task['filenames']
     sp = Path(task['sp'])
     if not (sp / 'vt.h5').exists() or overwriteFlag :
-        t,x,y = get_position(fp/vt_file)
+        t,x,y = get_position(vt_file)
         with h5py.File(str(sp / 'vt')+'.h5', 'w') as hf:
             hf.create_dataset("t",  data=t)
             hf.create_dataset("x",  data=x)
