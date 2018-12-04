@@ -28,7 +28,6 @@ for o, a in myopts:
     else:
         print("Usage: %s -t taskID -f tasks.json" % sys.argv[0])
         sys.exit('Invalid input. Aborting.')
-
 try:
     if (TasksDir/taskFile).exists():
         with open((str(TasksDir/taskFile)), 'r') as f:
@@ -58,6 +57,11 @@ for file in task_list.keys():
             print("Processing Tracking Positions")
             from pre_process_neuralynx import get_save_tracking
             get_save_tracking(task)
+        elif task_type == 'npy2bin':
+            print("Processing Data Conversion to Binary")
+            from dataConvert import npy2bin
+            npy2bin(task['filenames'],task['sp'],overwrite=1)
+
         t2=time.time()
         print("Task Completed. Total Task Time {}".format(t2-t1))
     except:

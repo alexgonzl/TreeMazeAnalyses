@@ -41,7 +41,6 @@ if __name__ == '__main__':
     date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
 
     Sessions = {}
-    taskID = 1
     SessionCnt = 0
     for session in volumePath.glob('*_*[0-9]'):
         SessionCnt+=1
@@ -49,6 +48,7 @@ if __name__ == '__main__':
         sp = Path(str(session)+'_Results')
         sp.mkdir(parents=True, exist_ok=True)
         Files = {}
+        taskID = 1
         try:
             # Look for valid records e.g. CSC1d.ncs
             for tt in np.arange(1,17):

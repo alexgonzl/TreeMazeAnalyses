@@ -23,7 +23,7 @@ import sys
 import h5py, json
 import nept
 
-def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, overwriteFlag=0):
+def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, overwriteFlag=0):
     ''' This function takes a list of neuralynx continously sampled channel (csc) files,
      performs initial preprocessing, data QA, and saves all the channels from a tetrode together.
      The files should come from the same recording, have the same length, and follow the naming
@@ -67,7 +67,7 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
     tt_id = task['tt_id']
     csc_files = task['filenames']
     sp = Path(task['sp'])
-    if not (sp / 'tt_{}.npy'.format(tt_id)).exists() or overwriteFlag :
+    if not (sp / 'tt_{}.{}'.format(tt_id,save_format)).exists() or overwriteFlag :
         # Filter Parameters (must excist in the same directory)
         try:
             b = np.fromfile('filt_b.dat',dtype='float',sep=',')
@@ -138,10 +138,17 @@ def get_process_save_tetrode(task, save_format='npy', AmpPercentileThr=0.975, ov
             print("Total time to preprocess the signal %0.2f" % (t4-t1))
 
             data[:,cnt]=fsig
-            info['nBadAmpSamps'+'_'+chan_id_str]=nBadSamps
+            info['nBadAmpSamps_'+chan_id_str]=nBadSamps
+
             cnt=cnt+1
             print('Processing TT {} Channel {} completed.\n'.format(tt_id,chan_id))
-        save_tetrode(data,sp,tt_id,save_format)
+
+        if save_format=='bin':
+            int16NormFactor = getInt16ConvFactor(data)
+            info['Int_16_Norm_Factors = '] = int16NormFactor
+            save_tetrode(data,sp,tt_id,save_format,int16NormFactor)
+        else:
+            save_tetrode(data,sp,tt_id,save_format)
         save_tetrode_info(info,tt_id,sp)
     else:
         print('File exists and overwrite = false ')
@@ -175,14 +182,22 @@ def get_save_tracking(task,overwriteFlag=0):
 ######################## Auxiliary Functions ###################################
 ################################################################################
 ################################################################################
-def save_tetrode(tetrode,save_path,tid,save_format):
-    if save_format=='h5':
+
+def save_tetrode(tetrode,save_path,tid,save_format,int16NormFactor=1):
+    if save_format=='h5': # h5 format
         with h5py.File(str(save_path / 'tt_')+str(tid)+'.h5', 'w') as hf:
             hf.create_dataset("tetrode",  data=tetrode)
-    elif save_format=='npy':
+    elif save_format=='npy': # numpy
         np.save(str(save_path / 'tt_')+str(tid),tetrode)
-    elif save_format=='csv':
+    elif save_format=='csv': # comma separeted values
         np.savetxt(str(save_path / 'tt_')+str(tid)+'.csv',tetrode,delimiter=',')
+    elif save_format=='bin': # binary
+        data=data2int16(tetrode,int16NormFactor)
+        data.tofile(str(save_path / 'tt_')+str(tid)+'.bin')
+    else:
+        print('Unsuported save method specified {}, saving as .npy array.'.format(save_format))
+        np.save(str(save_path / 'tt_')+str(tid),tetrode)
+
     print('Tetrode {} results saved to '.format(tid)  + str(save_path))
     print('')
 
@@ -269,5 +284,15 @@ def get_events(fn):
       'L1':'L1','L2':'L2','L3':'L3','L4':'L4','L5':'L5','L6':'L6',
       'RD':'RD','CL':'CL','CR':'CR'}
 
-    ev=nept.load_events(fn,events)
-    return ev
+def data2int16(data,int16NormFactor):
+    nChannels = data.shape[1] # 1 is the dim of channels
+    data2=np.zeros(np.shape(data),np.int16)
+    for ch in np.arange(nChannels):
+        data2[:,ch] = np.floor(data[:,ch]*int16NormFactor)
+    return data2
+
+def getInt16ConvFactor(data):
+    maxInt16Val = 32767
+    minDatVal = np.min(data,0)
+    maxDatVal = np.max(data,0)
+    return maxInt16Val/np.maximum(abs(minDatVal),abs(maxDatVal))
