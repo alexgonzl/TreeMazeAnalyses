@@ -60,7 +60,7 @@ for file in task_list.keys():
         elif task_type == 'npy2bin':
             print("Processing Data Conversion to Binary")
             from dataConvert import npy2bin
-            npy2bin(task['filenames'],task['sp'],overwrite=1)
+            npy2bin(task['filenames'],task['sp'],overwriteFlag=1)
 
         t2=time.time()
         print("Task Completed. Total Task Time {}".format(t2-t1))

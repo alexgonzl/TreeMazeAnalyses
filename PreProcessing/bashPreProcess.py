@@ -11,9 +11,10 @@ def mkdir_p(dir):
 job_directory = "%s/.job" %os.getcwd()
 mkdir_p(job_directory)
 
-table = "PreProcessingTable_Ne_11_19_2018.json"
+table = "PreProcessingTable_12_4_2018.json"
+nJobs = 44
 
-for t in range(2,79):
+for t in range(1,nJobs+1):
 
     job_file = os.path.join(job_directory,"t%s.job" %t)
 
@@ -26,4 +27,4 @@ for t in range(2,79):
         fh.writelines("#SBATCH --mail-type=ALL\n")
         fh.writelines("python3 pyClusterBatch_Session.py -t %s -f %s\n" % (t,table))
 
-    os.system("sbatch --partition=giocomo --mem=8000 --cpus-per-task=4 --mail-user=alexg8@stanford.edu %s" %job_file)
+    os.system("sbatch --partition=giocomo --mem=8000 --cpus-per-task=2 --mail-user=alexg8@stanford.edu %s" %job_file)

@@ -47,9 +47,10 @@ if __name__ == '__main__':
             for tt in np.arange(1,17):
                 file = 'tt_' + str(tt) + '.npy'
                 if (session / file).exists():
-                    Files[taskID] = dict_entry('npy2bin',str(session /csc),str(session))
+                    Files[taskID] = dict_entry('npy2bin',str(session / file),session)
+                    taskID+=1
             if len(Files)>0:
-                Sessions[SessionCnt] = session_entry(session,Files,sp)
+                Sessions[SessionCnt] = session_entry(session,Files,session)
             else:
                 print('Empty Session {}, discarding.'.format(str(session)))
                 SessionCnt-=1
