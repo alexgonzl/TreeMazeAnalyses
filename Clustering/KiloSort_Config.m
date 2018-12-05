@@ -1,18 +1,14 @@
-function ops=KiloSort_Config()
-
-datFile = '/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results/tt_1.npy';
-fproc = '/Users/alexgonzalez/Google Drive/PostDoc/Data/T3g/Li/Li_T3g_060418_Results_SS/temp_wh.dat';
-root = datFile;
+function ops=KiloSort_Config(datFile,datDir)
 
 ops.GPU                 = 0; % whether to run this code on an Nvidia GPU (much faster, mexGPUall first)		
-ops.parfor              = 0; % whether to use parfor to accelerate some parts of the algorithm		
+ops.parfor              = 1; % whether to use parfor to accelerate some parts of the algorithm		
 ops.verbose             = 1; % whether to print command line progress		
-ops.showfigures         = 1; % whether to plot figures during optimization		
+ops.showfigures         = 0; % whether to plot figures during optimization		
 
-ops.datatype            = 'dat';  % binary ('dat', 'bin') or 'openEphys'		
-ops.fbinary             = datFile; % will be created for 'openEphys'		
-ops.fproc               = fproc; % residual from RAM of preprocessed data		
-ops.root                = root; % 'openEphys' only: where raw files are		
+ops.datatype            = 'bin';  % binary ('dat', 'bin') or 'openEphys'		
+ops.fbinary             = fullfile(datDir,datFile); % will be created for 'openEphys'		
+ops.fproc               = fullfile(datDir,'temp_wh.dat'); % residual from RAM of preprocessed data		
+ops.root                = datDir; % 'openEphys' only: where raw files are		
 		
 ops.fs                  = 32000;        % sampling rate		(omit if already in chanMap file)
 ops.NchanTOT            = 4;           % total number of channels (omit if already in chanMap file)
@@ -24,14 +20,14 @@ ops.nNeigh              = 4;           % visualization only (Phy): number of nei
 % options for channel whitening		
 ops.whitening           = 'noSpikes'; % type of whitening (default 'full', for 'noSpikes' set options for spike detection below)		
 ops.nSkipCov            = 1; % compute whitening matrix from every N-th batch (1)		
-ops.whiteningRange      = 32; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)		
+ops.whiteningRange      = 4; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)		
 		
 % define the channel map as a filename (string) or simply an array		
-ops.chanMap             = '/Users/alexgonzalez/Google Drive/PostDoc/Code/TreeMazeAnalysis/Clustering/chanMap.mat'; % make this file using createChannelMapFile.m		
+ops.chanMap             = 'chanMap.mat'; % make this file using createChannelMapFile.m		
 ops.criterionNoiseChannels = 0.2; % fraction of "noise" templates allowed to span all channel groups (see createChannelMapFile for more info). 		
 % ops.chanMap = 1:ops.Nchan; % treated as linear probe if a chanMap file		
 		
-% other options for controlling the model and optimization		
+% other options for controlling the model and optimization	
 ops.Nrank               = 3;    % matrix rank of spike template model (3)		
 ops.nfullpasses         = 6;    % number of complete passes through data during optimization (6)		
 ops.maxFR               = 20000;  % maximum number of spikes to extract per batch (20000)		
@@ -40,7 +36,7 @@ ops.fshigh              = 300;   % frequency for high pass filtering
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection		
 ops.scaleproc           = 200;   % int16 scaling of whitened data		
 %ops.NT                  = 32*1024+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 		
-ops.NT                  = 32*128+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 		
+ops.NT                  = 32*256+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 		
 % for GPU should be multiple of 32 + ntbuff		
 		
 % the following options can improve/deteriorate results. 		
@@ -71,7 +67,7 @@ ops.wPCA            = dd.Wi(:,1:7);   % PCs
 ops.fracse  = 0.1; % binning step along discriminant axis for posthoc merges (in units of sd)		
 ops.epu     = Inf;		
 		
-ops.ForceMaxRAMforDat   = 2e9; % maximum RAM the algorithm will try to use; on Windows it will autodetect.
+ops.ForceMaxRAMforDat   = 8e9; % maximum RAM the algorithm will try to use; on Windows it will autodetect.
 %ops.ForceMaxRAMforDat   = 20e9; % maximum RAM the algorithm will try to use; on Windows it will autodetect.
 
 
