@@ -12,3 +12,4 @@ __pycache__/
 ./PreProcessing/TasksDir/*
 TasksDir
 TasksDir/*
+*.m~
