@@ -6,7 +6,7 @@ ops.verbose             = 1; % whether to print command line progress
 ops.showfigures         = 0; % whether to plot figures during optimization		
 
 ops.datatype            = 'bin';  % binary ('dat', 'bin') or 'openEphys'		
-ops.fbinary             = fullfile(datDir,datFile); % will be created for 'openEphys'		
+ops.fbinary             = fullfile(datFile); % will be created for 'openEphys'		
 ops.fproc               = fullfile(datDir,'temp_wh.dat'); % residual from RAM of preprocessed data		
 ops.root                = datDir; % 'openEphys' only: where raw files are		
 		
@@ -36,7 +36,7 @@ ops.fshigh              = 300;   % frequency for high pass filtering
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection		
 ops.scaleproc           = 200;   % int16 scaling of whitened data		
 %ops.NT                  = 32*1024+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 		
-ops.NT                  = 32*256+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 		
+ops.NT                  = 32*512+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 		
 % for GPU should be multiple of 32 + ntbuff		
 		
 % the following options can improve/deteriorate results. 		

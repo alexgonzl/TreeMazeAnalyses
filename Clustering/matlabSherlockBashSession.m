@@ -1,7 +1,7 @@
 function matlabSherlockBashSession(task, tableFile)
 
 fullTablePath = fullfile(pwd,'TasksDir',tableFile);
-if exists(fullTablePath)
+if exist(fullTablePath)
     TaskTable = jsondecode(fileread(fullTablePath));
 else
     error('Task table not found');
@@ -20,10 +20,12 @@ for f =1:nFiles
     sp = fInfo.sp;
     
     if strcmp(type,'KiloSortCluster')
-        try
-            KiloSort_Master(fn,sp);      
-        catch
-            disp('Error Running KiloSort');
-        end
+        KiloSort_Master;
+       % try
+       %     KiloSort_Master(fn,sp);      
+       % catch e
+       %     disp('Error Running KiloSort');
+       %     disp(e.message);
+       % end
     end
 end
