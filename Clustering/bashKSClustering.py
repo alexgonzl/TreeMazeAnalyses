@@ -14,7 +14,7 @@ mkdir_p(job_directory)
 table = "PreProcessingTable_12_4_2018.json"
 nJobs = 44
 
-for t in range(1,nJobs+1):
+for t in range(2,nJobs+1):
 
     job_file = os.path.join(job_directory,"t%s.job" %t)
 
@@ -25,7 +25,7 @@ for t in range(1,nJobs+1):
         fh.writelines("#SBATCH --error=.out/%s.err\n" % t)
         fh.writelines("#SBATCH --time=01:00:00\n")
         fh.writelines("#SBATCH --mail-type=ALL\n")
-        fun = "try matlabSherlockBashSession(%s,%s); catch; end; quit" % (t,table)
-        fh.writelines("matlab -r %s \n" % (fun))
+        fun = "try matlabSherlockBashSession(%s,'%s'); catch; end; quit" % (t,table)
+        fh.writelines('matlab -r "%s" \n' % (fun))
 
     os.system("sbatch --partition=giocomo --mem=8000 --cpus-per-task=4 --mail-user=alexg8@stanford.edu %s" %job_file)

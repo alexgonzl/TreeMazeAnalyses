@@ -39,12 +39,14 @@ if __name__ == '__main__':
         SessionCnt+=1
         print('Collecting Info for Session # {}, {}'.format(SessionCnt, session.name))
         Files = {}
-        taskID = 1 #
+        taskID = 1 
         try:
             for tt in np.arange(1,17):
                 file = 'tt_' + str(tt) + '.bin'
+                sp = Path((session/'tt_')+str(tt))
+                sp.mkdir(parents=True,exist_ok=True)
                 if (session / file).exists():
-                    Files[taskID] = dict_entry('KiloSortCluster',str(session / file),session)
+                    Files[taskID] = dict_entry('KiloSortCluster',str(session / file),sp)
                     taskID+=1
             if len(Files)>0:
                 Sessions[SessionCnt] = session_entry(session,Files,session)
@@ -56,5 +58,5 @@ if __name__ == '__main__':
             continue
 
     print('Number of Sessions to be proccess = {}'.format(SessionCnt))
-    with open(str(TasksDir)+'/PreProcessingTable_{}.json'.format(date_str), 'w') as f:
+    with open(str(TasksDir)+'/Clustering_{}.json'.format(date_str), 'w') as f:
         json.dump(Sessions, f ,indent=4)

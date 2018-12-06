@@ -20,7 +20,7 @@ for f =1:nFiles
     sp = fInfo.sp;
     
     if strcmp(type,'KiloSortCluster')
-        KiloSort_Master;
+        KiloSort_Master(fn,sp);
        % try
        %     KiloSort_Master(fn,sp);      
        % catch e
