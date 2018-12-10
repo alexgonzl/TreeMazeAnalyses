@@ -40,27 +40,28 @@ except:
 session = task_table[taskIDstr]
 nFiles = session['nFiles']
 task_list = session['Files']
+print("Processing Session {} ".format(session))
 for file in task_list.keys():
     try:
         task=task_list[file]
         t1=time.time()
         task_type = task['type']
         if task_type=='tt':
-            print("Processing Tetrode # {}".format(task['tt_id']))
+            print("Processing Tetrode # {}, subSessionID={}".format(task['tt_id'],task['subSessionID']))
             from pre_process_neuralynx import get_process_save_tetrode
             get_process_save_tetrode(task)
         elif task_type == 'ev':
-            print("Processing Events")
+            print("Processing Events, subSessionID={}".format(task['subSessionID']))
             from pre_process_neuralynx import get_save_events
             get_save_events(task)
         elif task_type == 'vt':
-            print("Processing Tracking Positions")
+            print("Processing Video Tracking, subSessionID={}".format(task['subSessionID']))
             from pre_process_neuralynx import get_save_tracking
             get_save_tracking(task)
         elif task_type == 'npy2bin':
             print("Processing Data Conversion to Binary")
             from dataConvert import npy2bin
-            npy2bin(task['filenames'],task['sp'],overwriteFlag=1)
+            npy2bin(task['filenames'],task['sp'],overwriteFlag=0)
 
         t2=time.time()
         print("Task Completed. Total Task Time {}".format(t2-t1))

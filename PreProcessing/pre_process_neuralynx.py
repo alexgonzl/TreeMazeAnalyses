@@ -22,6 +22,7 @@ import csv
 import sys
 import h5py, json
 import nept
+from dataConvert import getInt16ConvFactor,data2int16
 
 def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, overwriteFlag=0):
     ''' This function takes a list of neuralynx continously sampled channel (csc) files,
@@ -67,7 +68,14 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
     tt_id = task['tt_id']
     csc_files = task['filenames']
     sp = Path(task['sp'])
-    if not (sp / 'tt_{}.{}'.format(tt_id,save_format)).exists() or overwriteFlag :
+    ss = task['subSessionID']
+
+    if ss=='0000':
+        ttFile = 'tt_{}'.format(tt_id)
+    else
+        ttFile = 'tt_{}_{}'.format(tt_id,ss)
+
+    if not (sp / (ttFile + '.' + save_format)).exists() or overwriteFlag :
         # Filter Parameters (must excist in the same directory)
         try:
             b = np.fromfile('filt_b.dat',dtype='float',sep=',')
@@ -94,7 +102,8 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
         # create information file
         info  = {'tetrodeID':[tt_id],'RefChan':h1['RefChan'],
-        'fs':h1['fs'],'AmpPercentileThr':AmpPercentileThr,'nSamps':nSamps, 'date_processed': date_str}
+        'fs':h1['fs'],'AmpPercentileThr':AmpPercentileThr,'nSamps':nSamps,
+        'date_processed': date_str, 'subSessionID'=ss}
 
         data = np.zeros((nSamps,4),dtype=np.float32)
         cnt =0
@@ -145,21 +154,26 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
         if save_format=='bin':
             int16NormFactor = getInt16ConvFactor(data)
-            info['Int_16_Norm_Factors = '] = int16NormFactor
-            save_tetrode(data,sp,tt_id,save_format,int16NormFactor)
+            info['Int_16_Norm_Factors = '] = int16NormFactor.tolist()
+            save_tetrode(data,sp,ttFile,save_format,int16NormFactor)
         else:
-            save_tetrode(data,sp,tt_id,save_format)
-        save_tetrode_info(info,tt_id,sp)
+            save_tetrode(data,sp,ttFile,save_format)
+        save_tetrode_info(info,ttFile,sp)
     else:
         print('File exists and overwrite = false ')
 
 def get_save_events(task,overwriteFlag=0):
     ev_file = task['filenames']
     sp = Path(task['sp'])
+    ss = task['subSessionID']
+    if ss=='0000':
+        evFile = 'ev.h5'
+    else
+        evFile = 'ev_{}.h5'.format(ss)
 
-    if not (sp / 'ev.h5').exists() or overwriteFlag:
+    if not (sp / evFile).exists() or overwriteFlag :
         ev = get_events(ev_file)
-        with h5py.File(str(sp / 'ev')+'.h5', 'w') as hf:
+        with h5py.File(str(sp / evFile), 'w') as hf:
             for k,v in ev.items():
                 hf.create_dataset(k,  data=v)
     else:
@@ -168,9 +182,15 @@ def get_save_events(task,overwriteFlag=0):
 def get_save_tracking(task,overwriteFlag=0):
     vt_file = task['filenames']
     sp = Path(task['sp'])
-    if not (sp / 'vt.h5').exists() or overwriteFlag :
+    ss = task['subSessionID']
+    if ss=='0000':
+        vt_file = 'vt.h5'
+    else
+        vt_file = 'vt_{}.h5'.format(ss)
+
+    if not (sp / vt_file).exists() or overwriteFlag :
         t,x,y = get_position(vt_file)
-        with h5py.File(str(sp / 'vt')+'.h5', 'w') as hf:
+        with h5py.File(str(sp / vt_file), 'w') as hf:
             hf.create_dataset("t",  data=t)
             hf.create_dataset("x",  data=x)
             hf.create_dataset("y",  data=y)
@@ -183,31 +203,26 @@ def get_save_tracking(task,overwriteFlag=0):
 ################################################################################
 ################################################################################
 
-def save_tetrode(tetrode,save_path,tid,save_format,int16NormFactor=1):
+def save_tetrode(tetrode,save_path,ttFile,save_format,int16NormFactor=1):
     if save_format=='h5': # h5 format
-        with h5py.File(str(save_path / 'tt_')+str(tid)+'.h5', 'w') as hf:
+        with h5py.File(str(save_path / (ttFile + '.' + save_format)), 'w') as hf:
             hf.create_dataset("tetrode",  data=tetrode)
     elif save_format=='npy': # numpy
-        np.save(str(save_path / 'tt_')+str(tid),tetrode)
+        np.save(str(save_path / (ttFile + '.' + save_format)),tetrode)
     elif save_format=='csv': # comma separeted values
-        np.savetxt(str(save_path / 'tt_')+str(tid)+'.csv',tetrode,delimiter=',')
+        np.savetxt(str(save_path / (ttFile + '.' + save_format)),tetrode,delimiter=',')
     elif save_format=='bin': # binary
         data=data2int16(tetrode,int16NormFactor)
-        data.tofile(str(save_path / 'tt_')+str(tid)+'.bin')
+        data.tofile(str(save_path / (ttFile + '.' + save_format)))
     else:
         print('Unsuported save method specified {}, saving as .npy array.'.format(save_format))
-        np.save(str(save_path / 'tt_')+str(tid),tetrode)
+        np.save(str(save_path / (ttFile + '.' + save_format)),tetrode)
 
-    print('Tetrode {} results saved to '.format(tid)  + str(save_path))
+    print('Tetrode {} results saved to {}'.format(ttFile, str(save_path)))
     print('')
 
 def save_tetrode_info(header,tid,save_path):
-    # with open(str(save_path / 'header_tt')+str(tid),'w') as f:
-    #     w = csv.writer(f)
-    #     for key, value in header.items():
-    #         print(key,value)
-    #         w.writerow([key, value])
-    with open(str(save_path/'header_tt')+str(tid)+'.json', 'w') as f:
+    with open(str(save_path/('header_'+ttFile+'.json')), 'w') as f:
         json.dump(header, f ,indent=4)
 
 def save_timestamps(stamps, save_path, save_format):
@@ -283,16 +298,3 @@ def get_events(fn):
     events = {'DE1':'DE1','DE2':'DE2','DE3':'DE3','DE4':'DE4','DE5':'DE5','DE6':'DE6',
       'L1':'L1','L2':'L2','L3':'L3','L4':'L4','L5':'L5','L6':'L6',
       'RD':'RD','CL':'CL','CR':'CR'}
-
-def data2int16(data,int16NormFactor):
-    nChannels = data.shape[1] # 1 is the dim of channels
-    data2=np.zeros(np.shape(data),np.int16)
-    for ch in np.arange(nChannels):
-        data2[:,ch] = np.floor(data[:,ch]*int16NormFactor)
-    return data2
-
-def getInt16ConvFactor(data):
-    maxInt16Val = 32767
-    minDatVal = np.min(data,0)
-    maxDatVal = np.max(data,0)
-    return maxInt16Val/np.maximum(abs(minDatVal),abs(maxDatVal))
