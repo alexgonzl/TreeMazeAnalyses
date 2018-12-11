@@ -4,6 +4,7 @@ ops.GPU                 = 0; % whether to run this code on an Nvidia GPU (much f
 ops.parfor              = 1; % whether to use parfor to accelerate some parts of the algorithm		
 ops.verbose             = 1; % whether to print command line progress		
 ops.showfigures         = 0; % whether to plot figures during optimization		
+ops.Overwrite           = 0;
 
 ops.datatype            = 'bin';  % binary ('dat', 'bin') or 'openEphys'		
 ops.fbinary             = fullfile(datFile); % will be created for 'openEphys'		

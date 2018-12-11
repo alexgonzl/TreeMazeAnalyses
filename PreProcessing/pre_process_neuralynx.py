@@ -72,7 +72,7 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
     if ss=='0000':
         ttFile = 'tt_{}'.format(tt_id)
-    else
+    else:
         ttFile = 'tt_{}_{}'.format(tt_id,ss)
 
     if not (sp / (ttFile + '.' + save_format)).exists() or overwriteFlag :
@@ -103,7 +103,7 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
         # create information file
         info  = {'tetrodeID':[tt_id],'RefChan':h1['RefChan'],
         'fs':h1['fs'],'AmpPercentileThr':AmpPercentileThr,'nSamps':nSamps,
-        'date_processed': date_str, 'subSessionID'=ss}
+        'date_processed': date_str, 'subSessionID':ss}
 
         data = np.zeros((nSamps,4),dtype=np.float32)
         cnt =0
@@ -163,16 +163,16 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
         print('File exists and overwrite = false ')
 
 def get_save_events(task,overwriteFlag=0):
-    ev_file = task['filenames']
+    raw_ev_file = task['filenames']
     sp = Path(task['sp'])
     ss = task['subSessionID']
     if ss=='0000':
         evFile = 'ev.h5'
-    else
+    else:
         evFile = 'ev_{}.h5'.format(ss)
 
     if not (sp / evFile).exists() or overwriteFlag :
-        ev = get_events(ev_file)
+        ev = get_events(raw_ev_file)
         with h5py.File(str(sp / evFile), 'w') as hf:
             for k,v in ev.items():
                 hf.create_dataset(k,  data=v)
@@ -180,16 +180,16 @@ def get_save_events(task,overwriteFlag=0):
         print('File exists and overwrite = false ')
 
 def get_save_tracking(task,overwriteFlag=0):
-    vt_file = task['filenames']
+    raw_vt_file = task['filenames']
     sp = Path(task['sp'])
     ss = task['subSessionID']
     if ss=='0000':
         vt_file = 'vt.h5'
-    else
+    else:
         vt_file = 'vt_{}.h5'.format(ss)
 
     if not (sp / vt_file).exists() or overwriteFlag :
-        t,x,y = get_position(vt_file)
+        t,x,y = get_position(raw_vt_file)
         with h5py.File(str(sp / vt_file), 'w') as hf:
             hf.create_dataset("t",  data=t)
             hf.create_dataset("x",  data=x)
@@ -221,7 +221,7 @@ def save_tetrode(tetrode,save_path,ttFile,save_format,int16NormFactor=1):
     print('Tetrode {} results saved to {}'.format(ttFile, str(save_path)))
     print('')
 
-def save_tetrode_info(header,tid,save_path):
+def save_tetrode_info(header,ttFile,save_path):
     with open(str(save_path/('header_'+ttFile+'.json')), 'w') as f:
         json.dump(header, f ,indent=4)
 

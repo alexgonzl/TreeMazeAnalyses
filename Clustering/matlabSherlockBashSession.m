@@ -13,10 +13,12 @@ session = TaskTable.(taskID).session_name;
 nFiles = TaskTable.(taskID).nFiles;
 
 for f =1:nFiles
+    fprintf('Processing File # %i \n',f);
     fID = strcat('x',num2str(f));
     fInfo =  TaskTable.(taskID).Files.(fID);
     type = fInfo.type;
     fn = fInfo.filenames;
+    fprintf('fID: %s\n',fn);
     sp = fInfo.sp;
     
     if strcmp(type,'KiloSortCluster')
@@ -28,4 +30,5 @@ for f =1:nFiles
        %     disp(e.message);
        % end
     end
+    fprintf('Clustering Completed for %i\n\n',f);
 end

@@ -12,19 +12,23 @@ def dict_entry(type,fn,sp):
 if __name__ == '__main__':
     # Store taskID and TaskFile
     volumePath=''
+    ID = ''
     minFileSize = 16384
 
-    if len(sys.argv)<2:
-        print("Usage: %s -v 'Volume/path/to/folders' -p " % sys.argv[0])
+    if len(sys.argv)<4:
+        print("Usage: %s -a ID -v 'Volume/path/to/folders' -p " % sys.argv[0])
         sys.exit('Invalid input.')
 
+    print(sys.argv[1:])
     myopts, args = getopt.getopt(sys.argv[1:],"a:v:")
     for o, a in myopts:
         print(o,a)
         if o == '-v':
             volumePath = Path(str(a))
+        elif o=='-a':
+            ID = str(a)
         else:
-            print("Usage: %s -v 'Volume/path/to/folders'" % sys.argv[0])
+            print("Usage: %s -a ID -v 'Volume/path/to/folders'" % sys.argv[0])
             sys.exit('Invalid input. Aborting.')
 
     TasksDir = Path('./TasksDir')
@@ -43,7 +47,7 @@ if __name__ == '__main__':
         try:
             for tt in np.arange(1,17):
                 file = 'tt_' + str(tt) + '.bin'
-                sp = Path((session/'tt_')+str(tt))
+                sp = session/('tt_'+str(tt))
                 sp.mkdir(parents=True,exist_ok=True)
                 if (session / file).exists():
                     Files[taskID] = dict_entry('KiloSortCluster',str(session / file),sp)
@@ -58,5 +62,5 @@ if __name__ == '__main__':
             continue
 
     print('Number of Sessions to be proccess = {}'.format(SessionCnt))
-    with open(str(TasksDir)+'/Clustering_{}.json'.format(date_str), 'w') as f:
+    with open(str(TasksDir)+'/Clustering_{}_{}.json'.format(ID,date_str), 'w') as f:
         json.dump(Sessions, f ,indent=4)

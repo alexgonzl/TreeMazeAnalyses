@@ -3,7 +3,6 @@ warnings.simplefilter(action='ignore',category=FutureWarning)
 from pathlib import Path
 import sys, getopt
 import json, time
-#from pre_process_neuralynx import get_process_save_tetrode
 
 # Store taskID and TaskFile
 taskID=-1
@@ -31,7 +30,7 @@ for o, a in myopts:
 try:
     if (TasksDir/taskFile).exists():
         with open((str(TasksDir/taskFile)), 'r') as f:
-                task_table = json.load(f)
+            task_table = json.load(f)
     else:
         sys.exit('Could not get Task Table. Aborting.')
 except:
@@ -40,7 +39,7 @@ except:
 session = task_table[taskIDstr]
 nFiles = session['nFiles']
 task_list = session['Files']
-print("Processing Session {} ".format(session))
+print("Processing Session {}".format(session['session_name']))
 for file in task_list.keys():
     try:
         task=task_list[file]

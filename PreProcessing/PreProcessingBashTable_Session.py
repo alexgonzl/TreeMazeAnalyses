@@ -5,7 +5,7 @@ import numpy as np
 
 def session_entry(session_name,Files,sp,nSubSessions,validSubSessions):
     return {'session_name':str(session_name), 'Files':Files, 'nFiles':len(Files),
-    'sp':str(sp),'nSubSessions'=nSubSessions,'validSubSessions'=validSubSessions.tolist()}
+    'sp':str(sp),'nSubSessions':nSubSessions,'validSubSessions':validSubSessions.tolist()}
 
 def dict_entry(type,fn,sp,subSessionID,tt=-1):
     if type=='tt':
@@ -85,29 +85,38 @@ if __name__ == '__main__':
             # valid vt
             for vt in session.glob('*.nvt'):
                 try:
-                    for ss in np.arange(nSubSessions):
-                        ss_str = str(ss).zfill(4))
-                        if vt.stat().st_size>minFileSize:
-                            if vt.match('VT1.nvt') or vt.match('VT1_{}.nvt'.format(ss_str):
-                                Files[taskID] = dict_entry('vt',vt,sp,subSessionID=ss_str)
-                                taskID+=1
+                    if vt.stat().st_size>minFileSize:
+                        if vt.match('VT1.nvt'):
+                            Files[taskID] = dict_entry('vt',vt,sp,subSessionID='0000')
+                            taskID+=1
                         else:
-                            validSubSessions[ss]=False
+                            for ss in np.arange(1,nSubSessions):
+                                ss_str = str(ss).zfill(4)
+                                if vt.match('VT1_{}.nvt'.format(ss_str)):
+                                    Files[taskID] = dict_entry('vt',vt,sp,subSessionID=ss_str)
+                                    taskID+=1
+                    else:
+                        validSubSessions[ss]=False
                 except:
                     print('Could not assign task to {}'.format(vt))
+                    print(sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
                     continue
 
             # valid events
             for ev in session.glob('*.nev'):
                 try:
-                    for ss in np.arange(nSubSessions):
-                        ss_str = str(ss).zfill(4))
-                        if ev.stat().st_size>minFileSize:
-                            if ev.match('Events.nev') or ev.match('Events_{}.nev'.format(ss_str):
-                                Files[taskID] = dict_entry('ev',ev,sp,subSessionID=ss_str)
-                                taskID+=1
+                    if ev.stat().st_size>minFileSize:
+                        if ev.match('Events.nev'):
+                            Files[taskID] = dict_entry('ev',ev,sp,subSessionID='0000')
+                        else:
+                            for ss in np.arange(1,nSubSessions):
+                                ss_str = str(ss).zfill(4)
+                                if ev.match('Events_{}.nev'.format(ss_str)):
+                                    Files[taskID] = dict_entry('ev',ev,sp,subSessionID=ss_str)
+                                    taskID+=1
                 except:
                     print('Could not assign task to {}'.format(ev))
+                    print(sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
                     continue
             if len(Files)>0:
                 Sessions[SessionCnt] = session_entry(session,Files,sp,nSubSessions,validSubSessions)

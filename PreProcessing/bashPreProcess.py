@@ -1,30 +1,36 @@
 #!/usr/bin/env python
 
-import os
+import os, json,sys
+from pathlib import Path
 
-def mkdir_p(dir):
-    '''make a directory (dir) if it doesn't exist'''
-    if not os.path.exists(dir):
-        os.mkdir(dir)
+job_directory = Path("./.job")
+job_directory.mkdir(parents=True, exist_ok=True)
 
+ID = 'Al'
+date = '12_10_2018'
 
-job_directory = "%s/.job" %os.getcwd()
-mkdir_p(job_directory)
+table = "PreProcessingTable_{}_{}.json".format(ID,date)
+TasksDir = Path.cwd()/'TasksDir'
+if not TasksDir.exists():
+    sys.exit('Task directory not found.')
 
-table = "PreProcessingTable_12_4_2018.json"
-nJobs = 44
+if (TasksDir/table).exists():
+    with open((str(TasksDir/table)), 'r') as f:
+        task_table = json.load(f)
+
+nJobs = len(task_table)
 
 for t in range(1,nJobs+1):
 
-    job_file = os.path.join(job_directory,"t%s.job" %t)
+    job_file = os.path.join(job_directory,"{}_t{}.job".format(ID,t))
 
     with open(job_file,"w+") as fh:
         fh.writelines("#!/bin/bash\n")
         fh.writelines("ml python/3.6.1\n")
-        fh.writelines("#SBATCH --job-name=%s.job\n" % t)
-        fh.writelines("#SBATCH --error=.out/%s.err\n" % t)
-        fh.writelines("#SBATCH --time=01:00:00\n")
+        fh.writelines("#SBATCH --job-name={}_t{}.job\n".format(ID,t))
+        fh.writelines("#SBATCH --error=.out/{}_t{}.err\n".format(ID,t))
+        fh.writelines("#SBATCH --time=04:00:00\n")
         fh.writelines("#SBATCH --mail-type=ALL\n")
-        fh.writelines("python3 pyClusterBatch_Session.py -t %s -f %s\n" % (t,table))
+        fh.writelines("python3 pySherlockBatch_Session.py -t {} -f {}\n".format(t,table))
 
-    os.system("sbatch --partition=giocomo --mem=8000 --cpus-per-task=2 --mail-user=alexg8@stanford.edu %s" %job_file)
+    os.system("sbatch --partition=giocomo,owners --mem=8000 --cpus-per-task=2 --mail-user=alexg8@stanford.edu {}".format(job_file))
