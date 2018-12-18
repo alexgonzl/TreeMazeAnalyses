@@ -123,12 +123,13 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
             info['InputRange'+'_'+chan_id_str]=h2['InputRange']
             info['AmpRejThr'+'_'+chan_id_str] = h2['InputRange']*AmpPercentileThr
             info['date_created'+'_'+chan_id_str]=get_file_date(f[chan_id])
+            info['sig_stats_'+chan_id_str] = get_sig_stats(sig)
             rejThr= h2['InputRange']*AmpPercentileThr
 
             ## Step 1. Filter.
             t1=time.time()
             fsig = FilterCSC(sig,b,a)
-            fsig=sig
+            info['fsig_stats_'+chan_id_str] = get_sig_stats(fsig)
             t2=time.time()
             print("Time to filter the signal %0.2f" % (t2-t1))
 
@@ -148,6 +149,7 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
             data[:,cnt]=fsig
             info['nBadAmpSamps_'+chan_id_str]=nBadSamps
+            info['nAvgBadSamps_'+chan_id_str]="{0:0.3e}".format(nBadSamps/nSamps
 
             cnt=cnt+1
             print('Processing TT {} Channel {} completed.\n'.format(tt_id,chan_id))

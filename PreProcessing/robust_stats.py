@@ -106,3 +106,24 @@ def robust_zscore(signal):
 
     """
     return (signal-np.nanmedian(signal))/(mad(signal)*1.4826)
+
+def sig_stats(signal):
+    """ sig_stats
+        function that returns various signal statistics:
+        std, mad, min, max
+
+    Parameters
+    ----------
+    signal   : input numpy array (1D)
+
+    Returns
+    -------
+    out      : a dictionary with the above signal statistics
+
+    """
+    out = {}
+    out['std'] = np.std(signal)
+    out['mad'] = mad(signal)
+    out['min'] = np.nanmin(signal)
+    out['max'] = np.nanmax(signal)
+    return out
