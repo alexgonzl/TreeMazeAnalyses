@@ -84,7 +84,7 @@ if not table_c[taskIDstr] or overwriteFlag:
 try:
     table_c[taskIDstr] = 1
     table_c['updated'] = date_str
-    with open(str(tableCPath)), 'w') as f:
+    with open(str(tableCPath), 'w') as f:
         json.dump(table_c, f ,indent=4)
 except:
     print('Could not update job completation table.')

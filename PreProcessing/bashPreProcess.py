@@ -8,7 +8,7 @@ job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
 
 ID = 'Al'
-date = '12_10_2018'
+date = '12_18_2018'
 overwriteFlag=1
 
 date_obj = datetime.date.today()
@@ -20,7 +20,7 @@ if not TasksDir.exists():
     sys.exit('Task directory not found.')
 
 if (TasksDir/table).exists():
-    with open((str(TasksDir/table)), 'r') as f:
+    with open(str(TasksDir/table), 'r') as f:
         task_table = json.load(f)
 
 nJobs = len(task_table)
@@ -33,10 +33,10 @@ if not (TasksDir/completed_table).exists() or overwriteFlag:
     table_c['table'] = table
     table_c['updated'] = date_str
 
-    with open(str(TasksDir/completed_table)), 'w') as f:
+    with open(str(TasksDir/completed_table), 'w') as f:
         json.dump(table_c, f ,indent=4)
 else:
-    with open(str(TasksDir/completed_table)), 'r') as f:
+    with open(str(TasksDir/completed_table), 'r') as f:
         table_c =json.load(f)
     jobs = []
     for t in np.arange(1,nJobs+1):
@@ -45,6 +45,7 @@ else:
     jobs = np.asarray(jobs)
     
 for t in jobs:
+#for t in [1,2]:
     job_file = os.path.join(job_directory,"{}_t{}.job".format(ID,t))
 
     with open(job_file,"w+") as fh:

@@ -119,17 +119,17 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
             # get channel specific info
             h2  = get_header(f[chan_id])
-            info['AD'+'_'+chan_id_str]=float(h2['AD'])
+            info['AD'+'_'+chan_id_str]="{0:0.3e}".format(float(h2['AD']))
             info['InputRange'+'_'+chan_id_str]=h2['InputRange']
             info['AmpRejThr'+'_'+chan_id_str] = h2['InputRange']*AmpPercentileThr
             info['date_created'+'_'+chan_id_str]=get_file_date(f[chan_id])
-            info['sig_stats_'+chan_id_str] = get_sig_stats(sig)
+            info['sig_stats_'+chan_id_str] = sig_stats(sig)
             rejThr= h2['InputRange']*AmpPercentileThr
 
             ## Step 1. Filter.
             t1=time.time()
             fsig = FilterCSC(sig,b,a)
-            info['fsig_stats_'+chan_id_str] = get_sig_stats(fsig)
+            info['fsig_stats_'+chan_id_str] = sig_stats(fsig)
             t2=time.time()
             print("Time to filter the signal %0.2f" % (t2-t1))
 
@@ -149,7 +149,7 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
             data[:,cnt]=fsig
             info['nBadAmpSamps_'+chan_id_str]=nBadSamps
-            info['nAvgBadSamps_'+chan_id_str]="{0:0.3e}".format(nBadSamps/nSamps
+            info['nAvgBadSamps_'+chan_id_str]="{0:0.3e}".format(nBadSamps/nSamps)
 
             cnt=cnt+1
             print('Processing TT {} Channel {} completed.\n'.format(tt_id,chan_id))
@@ -165,21 +165,24 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
         print('File exists and overwrite = false ')
 
 def get_save_events(task,overwriteFlag=0):
-    raw_ev_file = task['filenames']
-    sp = Path(task['sp'])
-    ss = task['subSessionID']
-    if ss=='0000':
-        evFile = 'ev.h5'
-    else:
-        evFile = 'ev_{}.h5'.format(ss)
+    try:
+        raw_ev_file = task['filenames']
+        sp = Path(task['sp'])
+        ss = task['subSessionID']
+        if ss=='0000':
+            evFile = 'ev.h5'
+        else:
+            evFile = 'ev_{}.h5'.format(ss)
 
-    if not (sp / evFile).exists() or overwriteFlag :
-        ev = get_events(raw_ev_file)
-        with h5py.File(str(sp / evFile), 'w') as hf:
-            for k,v in ev.items():
-                hf.create_dataset(k,  data=v)
-    else:
-        print('File exists and overwrite = false ')
+        if not (sp / evFile).exists() or overwriteFlag :
+            ev = get_events(raw_ev_file)
+            with h5py.File(str(sp / evFile), 'w') as hf:
+                for k,v in ev.items():
+                    hf.create_dataset(k,  data=v)
+        else:
+            print('File exists and overwrite = false ')
+    except:
+        print ("Error processing events. ", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
 
 def get_save_tracking(task,overwriteFlag=0):
     raw_vt_file = task['filenames']
@@ -224,8 +227,13 @@ def save_tetrode(tetrode,save_path,ttFile,save_format,int16NormFactor=1):
     print('')
 
 def save_tetrode_info(header,ttFile,save_path):
-    with open(str(save_path/('header_'+ttFile+'.json')), 'w') as f:
-        json.dump(header, f ,indent=4)
+    try:
+        with open(str(save_path/('header_'+ttFile+'.json')), 'w') as f:
+            json.dump(header, f ,indent=4)
+    except:
+        print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+        print(header)
+            
 
 def save_timestamps(stamps, save_path, save_format):
     if save_format=='h5':
@@ -300,3 +308,6 @@ def get_events(fn):
     events = {'DE1':'DE1','DE2':'DE2','DE3':'DE3','DE4':'DE4','DE5':'DE5','DE6':'DE6',
       'L1':'L1','L2':'L2','L3':'L3','L4':'L4','L5':'L5','L6':'L6',
       'RD':'RD','CL':'CL','CR':'CR'}
+    
+    ev=nept.load_events(fn,events)
+    return ev

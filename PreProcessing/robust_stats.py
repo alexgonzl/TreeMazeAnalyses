@@ -122,8 +122,8 @@ def sig_stats(signal):
 
     """
     out = {}
-    out['std'] = np.std(signal)
-    out['mad'] = mad(signal)
-    out['min'] = np.nanmin(signal)
-    out['max'] = np.nanmax(signal)
+    out['std'] = "{0:0.3e}".format(np.std(signal))
+    out['mad'] = "{0:0.3e}".format(mad(signal))
+    out['min'] = "{0:0.3e}".format(np.nanmin(signal))
+    out['max'] = "{0:0.3e}".format(np.nanmax(signal))
     return out
