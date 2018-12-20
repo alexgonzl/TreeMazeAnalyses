@@ -9,7 +9,7 @@ job_directory.mkdir(parents=True, exist_ok=True)
 
 ID = 'Al'
 date = '12_18_2018'
-overwriteFlag=1
+overwriteFlag=0
 
 date_obj = datetime.date.today()
 date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
@@ -43,7 +43,7 @@ else:
         if not table_c[str(t)]:
             jobs.append(t)
     jobs = np.asarray(jobs)
-    
+
 for t in jobs:
 #for t in [1,2]:
     job_file = os.path.join(job_directory,"{}_t{}.job".format(ID,t))

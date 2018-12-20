@@ -1,31 +1,42 @@
 #!/usr/bin/env python
 
-import os
+import os, json,sys, time, datetime
+import numpy as np
+from pathlib import Path
 
-def mkdir_p(dir):
-    '''make a directory (dir) if it doesn't exist'''
-    if not os.path.exists(dir):
-        os.mkdir(dir)
+job_directory = Path("./.job")
+job_directory.mkdir(parents=True, exist_ok=True)
 
 
-job_directory = "%s/.job" %os.getcwd()
-mkdir_p(job_directory)
+ID = 'Li'
+date = '12_19_2018'
+overwriteFlag=1
 
-table = "Clustering_Ne_12_7_2018.json"
-nJobs = 62
+date_obj = datetime.date.today()
+date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
 
-for t in range(1,nJobs+1):
+table = "PreProcessingTable_{}_{}.json".format(ID,date)
+TasksDir = Path.cwd()/'TasksDir'
+if not TasksDir.exists():
+    sys.exit('Task directory not found.')
 
-    job_file = os.path.join(job_directory,"t%s.job" %t)
+if (TasksDir/table).exists():
+    with open(str(TasksDir/table), 'r') as f:
+        task_table = json.load(f)
+
+nJobs = len(task_table)
+for t in jobs:
+    job_file = os.path.join(job_directory,"{}_t{}.job".format(ID,t))
 
     with open(job_file,"w+") as fh:
         fh.writelines("#!/bin/bash\n")
         fh.writelines("ml matlab/R2018a\n")
         fh.writelines("#SBATCH --job-name=%s.job\n" % t)
         fh.writelines("#SBATCH --error=.out/%s.err\n" % t)
-        fh.writelines("#SBATCH --time=08:00:00\n")
+        fh.writelines("#SBATCH --time=24:00:00\n")
         fh.writelines("#SBATCH --mail-type=ALL\n")
         fun = "try matlabSherlockBashSession(%s,'%s'); catch; end; quit" % (t,table)
         fh.writelines('matlab -r "%s" \n' % (fun))
 
     os.system("sbatch --partition=giocomo,owners --mem=16000 --cpus-per-task=8 --mail-user=alexg8@stanford.edu %s" %job_file)
+    time.sleep(0.5)
