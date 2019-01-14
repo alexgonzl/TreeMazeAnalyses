@@ -8,7 +8,7 @@ import json, time, datetime
 taskID=-1
 taskIDstr=''
 taskFile=''
-overwriteFlag=1
+overwriteFlag=0
 
 date_obj = datetime.date.today()
 date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)

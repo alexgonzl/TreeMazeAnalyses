@@ -8,14 +8,14 @@ job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
 
 
-ID = 'Li'
-date = '12_19_2018'
-overwriteFlag=1
+ID = 'Ne'
+date = '1_10_2019'
+overwriteFlag=0
 
 date_obj = datetime.date.today()
 date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
 
-table = "PreProcessingTable_{}_{}.json".format(ID,date)
+table = "Clustering_{}_{}.json".format(ID,date)
 TasksDir = Path.cwd()/'TasksDir'
 if not TasksDir.exists():
     sys.exit('Task directory not found.')
@@ -25,7 +25,7 @@ if (TasksDir/table).exists():
         task_table = json.load(f)
 
 nJobs = len(task_table)
-for t in jobs:
+for t in np.arange(1,nJobs+1):
     job_file = os.path.join(job_directory,"{}_t{}.job".format(ID,t))
 
     with open(job_file,"w+") as fh:
@@ -38,5 +38,5 @@ for t in jobs:
         fun = "try matlabSherlockBashSession(%s,'%s'); catch; end; quit" % (t,table)
         fh.writelines('matlab -r "%s" \n' % (fun))
 
-    os.system("sbatch --partition=giocomo,owners --mem=16000 --cpus-per-task=8 --mail-user=alexg8@stanford.edu %s" %job_file)
+    os.system("sbatch --partition=giocomo,owners --mem=16000 --cpus-per-task=8 --time=24:00:00 --mail-user=alexg8@stanford.edu %s" %job_file)
     time.sleep(0.5)

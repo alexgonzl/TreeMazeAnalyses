@@ -7,8 +7,8 @@ from pathlib import Path
 job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
 
-ID = 'Al'
-date = '12_18_2018'
+ID = 'Li'
+date = '1_10_2019'
 overwriteFlag=0
 
 date_obj = datetime.date.today()
@@ -53,7 +53,7 @@ for t in jobs:
         fh.writelines("ml python/3.6.1\n")
         fh.writelines("#SBATCH --job-name={}_t{}.job\n".format(ID,t))
         fh.writelines("#SBATCH --error=.out/{}_t{}.err\n".format(ID,t))
-        fh.writelines("#SBATCH --time=04:00:00\n")
+        fh.writelines("#SBATCH --time=08:00:00\n")
         fh.writelines("#SBATCH --mail-type=ALL\n")
         fh.writelines("python3 pySherlockBatch_Session.py -t {} -f {}\n".format(t,table))
 
