@@ -233,7 +233,6 @@ def save_tetrode_info(header,ttFile,save_path):
     except:
         print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
         print(header)
-            
 
 def save_timestamps(stamps, save_path, save_format):
     if save_format=='h5':
@@ -296,18 +295,50 @@ def get_header(fn):
     return header
 
 def get_position(fn):
-    pos = nept.load_nvt(fn)
+    #pos = nept.load_nvt(fn)
     #x=signal.medfilt(pos['x']/2.48 ,15)
     #y=signal.medfilt(pos['y']/2.48,15)
-    t=pos['time']
-    x=pos['x']
-    y=pos['y']
-    return t,x,y
+    # t=pos['time']
+    # x=pos['x']
+    # y=pos['y']
+    t,x,y,ha = load_nvt2(fn)
+    return t,x,y, ha
 
 def get_events(fn):
     events = {'DE1':'DE1','DE2':'DE2','DE3':'DE3','DE4':'DE4','DE5':'DE5','DE6':'DE6',
       'L1':'L1','L2':'L2','L3':'L3','L4':'L4','L5':'L5','L6':'L6',
-      'RD':'RD','CL':'CL','CR':'CR'}
-    
+      'RD':'RD','CL':'CL','CR':'CR','Start':'Starting Recording','Stop':'Stopping Recording'}
+
     ev=nept.load_events(fn,events)
     return ev
+
+def load_nvt2(filename):
+    # Neuralynx files have a 16kbyte header
+    # copy and modified from Nept Pckg.
+    #
+
+    f = open(filename, 'rb')
+    header = f.read(2 ** 14).strip(b'\x00')
+
+    # The format for .nvt files according the the neuralynx docs is
+    # uint16 - beginning of the record
+    # uint16 - ID for the system
+    # uint16 - size of videorec in bytes
+    # uint64 - timestamp in microseconds
+    # uint32 x 400 - points with the color bitfield values
+    # int16 - unused
+    # int32 - extracted X location of target
+    # int32 - extracted Y location of target
+    # int32 - calculated head angle in degrees clockwise from the positive Y axis
+    # int32 x 50 - colored targets using the same bitfield format used to extract colors earlier
+    dt = np.dtype([('filler1', '<h', 3), ('time', '<Q'), ('points', '<i', 400),
+                   ('filler2', '<h'), ('x', '<i'), ('y', '<i'), ('head_angle', '<i'),
+                   ('targets', '<i', 50)])
+    data = np.fromfile(f, dt)
+
+    t = data['time'] * 1e-6
+    x = np.array(data['x'], dtype=float)
+    y = np.array(data['y'], dtype=float)
+    ha = np.array(data['head_angle'], dtype=float)
+
+    return t,x,y,ha
