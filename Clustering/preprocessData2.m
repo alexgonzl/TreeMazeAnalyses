@@ -310,4 +310,3 @@ end
 
 rez.temp.Nbatch = Nbatch;
 rez.temp.Nbatch_buff = Nbatch_buff;
-
