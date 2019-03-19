@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import datetime, sys, getopt
 import numpy as np
+import shutil
 
 def session_entry(session_name,Files,sp):
     return {'session_name':str(session_name), 'Files':Files, 'nFiles':len(Files),'sp':str(sp)}
@@ -47,7 +48,7 @@ if __name__ == '__main__':
         try:
             for tt in np.arange(1,17):
                 file = 'tt_' + str(tt) + '.bin'
-                sp = session/('tt_'+str(tt))
+                sp = Path(str(session).strip('_Results')+'_KSClusters/tt_'+str(tt))
                 sp.mkdir(parents=True,exist_ok=True)
                 if (session / file).exists():
                     Files[taskID] = dict_entry('KiloSortCluster',str(session / file),sp)
