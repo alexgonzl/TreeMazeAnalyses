@@ -164,12 +164,7 @@ while 1
         isproc(ibatch) = 1;
     end
 end
-switch ops.whitening
-    case 'none'
-        CC = diag(diag(ones(NchanTOT)));
-    otherwise
-        CC = CC / ceil((Nbatch-1)/ops.nSkipCov);
-end
+CC = CC / ceil((Nbatch-1)/ops.nSkipCov);
 switch ops.whitening
     case 'noSpikes'
         nPairs = nPairs/ibatch;
@@ -183,22 +178,20 @@ switch ops.whitening
         CC = CC ./nPairs;
 end
 
-switch ops.whitening
-    case 'none'
-        Wrot = CC;
-    otherwise
-        if ops.whiteningRange<Inf
-            ops.whiteningRange = min(ops.whiteningRange, Nchan);
-            Wrot = whiteningLocal(gather_try(CC), yc, xc, ops.whiteningRange);
-        else
-            %
-            [E, D] 	= svd(CC);
-            D = diag(D);
-            eps 	= 1e-6;
-            Wrot 	= E * diag(1./(D + eps).^.5) * E';
-        end
+
+if ops.whiteningRange<Inf
+    ops.whiteningRange = min(ops.whiteningRange, Nchan);
+    Wrot = whiteningLocal(gather_try(CC), yc, xc, ops.whiteningRange);
+else
+    %
+    [E, D] 	= svd(CC);
+    D = diag(D);
+    eps 	= 1e-6;
+    Wrot 	= E * diag(1./(D + eps).^.5) * E';
 end
-Wrot    = ops.scaleproc * Wrot;
+
+%Wrot    = ops.scaleproc * Wrot;
+Wrot = Wrot.*repmat(ops.scaleproc',1,4);
 
 fprintf('Time %3.0fs. Loading raw data and applying filters... \n', toc);
 
@@ -256,6 +249,7 @@ for ibatch = 1:Nbatch
         datr = datr(ioffset + (1:NT),:);
     end
     
+    datr    = datr * Wrot;
     %datr    = datr * Wrot;
     
     if ops.GPU
@@ -263,9 +257,11 @@ for ibatch = 1:Nbatch
     else
         dataRAW = datr;
     end
-    %         dataRAW = datr;
+    dataRAW = datr;
     dataRAW = single(dataRAW);
+    %
     %dataRAW = dataRAW / ops.scaleproc;
+     dataRAW=bsxfun(@rdivide,datr,ops.scaleproc);
     
     if strcmp(ops.initialize, 'fromData') %&& rem(ibatch, 10)==1
         % find isolated spikes

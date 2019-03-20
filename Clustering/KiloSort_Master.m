@@ -1,7 +1,8 @@
-function KiloSort_Master(datFile,datDir)
+%function KiloSort_Master(datFile,datDir)
 % default options are in parenthesis after the comment
-%datFile = fn;
-%datDir = sp;
+datFile = fn;
+datDir = sp;
+headerFile = hfn;;
 
 kilopath = '../Lib/KiloSort/';
 npy_mat  = '../Lib/npy-matlab/';
@@ -12,7 +13,7 @@ sp = datDir;
 
 %pathToYourConfigFile = './'; % take from Github folder and put it somewhere else (together with the master_file)
 %run(fullfile(pathToYourConfigFile, 'KiloSort_Config.m')) % change into function that can take input files.
-ops = KiloSort_Config(fn,sp);
+ops = KiloSort_Config(fn,hfn,sp);
 
 disp('')
 disp(strcat('Processing File', fn))
