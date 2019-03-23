@@ -46,7 +46,7 @@ for z in ZonesNames:
     cnt+=1
 
 MazeZonesCoords ={'Home':[(-300, -80), (-300, 80),(300,80),(300, -80)],
-                  'Center': [(-80,500),(-95,400),(-150,400),(-150,645),
+                  'Center': [(-80,500),(-95,400),(-150,400),(-150,655),
                              (-75,550),(0,600),(75,550),(150,660),(150,400),
                              (95,400),(80,500)],
                   'SegA': [(-150,80),(-80,500),(80,500),(150,80)],
@@ -109,16 +109,24 @@ def getPositionMat(x,y,t,step):
     t3=time.time()
     print('Resampling the Data to {0} seconds completed: {1:.2f} s '.format(step,t3-t2))
 
+    PosDat = {}
+    PosDat['x'] = xs
+    PosDat['y'] = ys
+    PosDat['t'] = tp
+
     # get maze positions
     PosZones = getMazeZones(xs,ys)
     t4=time.time()
     print('Converting Track x,y to TreeMaze Positions Completed: {0:.2f} s'.format(t4-t3))
 
+    PosDat['PosZones'] = PosZones
     # get position matrix
     PosMat = PosZones2Mat(PosZones)
     PosMat = pd.DataFrame(data=PosMat,columns=ZonesNames)
     t4=time.time()
     print('Creating Position Matrix Completed : {0:.2f} s'.format(t4-t3))
+
+    PosDat['PosMat'] = PosMat
 
     # get segment directions
     SegDirMat = getSegmentDirs(PosZones,tp)
@@ -126,7 +134,8 @@ def getPositionMat(x,y,t,step):
     print('Creating Segment Direction Matrix Complete: {0:.2f} s'.format(t5-t4))
     print('Processing of Position Data Complete : {0:.2f} s'.format(t5-t1))
 
-    return tp,PosMat,SegDirMat
+    PosDat['SegDirMat'] = SegDirMat
+    return PosDat
 
 def getEventMatrix(events,tp):
     '''
@@ -253,6 +262,9 @@ def ScaleRotateSmoothTrackDat(x,y):
     mask_x = np.logical_or(x<x_limit[0],x>x_limit[1])
     mask = np.logical_or(mask_x,mask_y)
     mask = np.logical_or(mask,mask_r)
+
+    mask_lower = np.logical_and(np.abs(x)>400,np.abs(y)<600)
+    mask =np.logical_or(mask,mask_lower)
 
     x[mask]=np.nan
     y[mask]=np.nan
@@ -636,3 +648,13 @@ def getLEDDurations(ev,step):
                 else:
                     LED_Durs[L_ID][eID] = defDur
     return LED_Durs
+
+################################################################################
+# Plot Functions
+################################################################################
+def plotPoly(poly,ax,alpha=0.3,color='g'):
+    p1x,p1y = poly.exterior.xy
+    ax.plot(p1x, p1y, color='k', alpha=alpha,
+        linewidth=3,)
+    ring_patch = PolygonPatch(poly, fc=color, ec='none', alpha=alpha)
+    ax.add_patch(ring_patch)
