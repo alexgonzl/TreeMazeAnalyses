@@ -2,7 +2,6 @@
 % default options are in parenthesis after the comment
 datFile = fn;
 datDir = sp;
-headerFile = hfn;;
 
 kilopath = '../Lib/KiloSort/';
 npy_mat  = '../Lib/npy-matlab/';
@@ -13,7 +12,7 @@ sp = datDir;
 
 %pathToYourConfigFile = './'; % take from Github folder and put it somewhere else (together with the master_file)
 %run(fullfile(pathToYourConfigFile, 'KiloSort_Config.m')) % change into function that can take input files.
-ops = KiloSort_Config(fn,hfn,sp);
+ops = KiloSort_Config(fn,sp);
 
 disp('')
 disp(strcat('Processing File', fn))
@@ -25,11 +24,9 @@ if (~exist(fullfile(sp,'rez.mat')) || ops.Overwrite)
     end
 
     [rez, DATA, uproj] = preprocessData2(ops); % preprocess data and extract spikes for initialization
-    fprintf('Filtering Completed: %0.2f\n', toc)
+    disp('Filtering Completed: ', toc)
     rez                = fitTemplates(rez, DATA, uproj);  % fit templates iteratively
-    fprintf('Template Fit Completed: %0.2f\n', toc)
     rez                = fullMPMU(rez, DATA);% extract final spike times (overlapping extraction)
-    fprintf('Spike Extraction Completed: %0.2f\n', toc)
 
     % save matlab results file
     save(fullfile(ops.root,  'rez.mat'), 'rez', '-v7.3');

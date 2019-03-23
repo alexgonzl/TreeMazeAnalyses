@@ -8,7 +8,7 @@ import json, time, datetime
 taskID=-1
 taskIDstr=''
 taskFile=''
-overwriteFlag=0
+overwriteFlag=1
 
 date_obj = datetime.date.today()
 date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
@@ -52,7 +52,8 @@ session = task_table[taskIDstr]
 nFiles = session['nFiles']
 task_list = session['Files']
 print("Processing Session {}".format(session['session_name']))
-if not table_c[taskIDstr] or overwriteFlag:
+#if not table_c[taskIDstr] or overwriteFlag:
+if 1:
     for file in task_list.keys():
         try:
             task=task_list[file]

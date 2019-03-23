@@ -156,7 +156,7 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
         if save_format=='bin':
             int16NormFactor = getInt16ConvFactor(data)
-            info['Int_16_Norm_Factors = '] = int16NormFactor.tolist()
+            info['Int_16_Norm_Factors'] = int16NormFactor.tolist()
             save_tetrode(data,sp,ttFile,save_format,int16NormFactor)
         else:
             save_tetrode(data,sp,ttFile,save_format)
