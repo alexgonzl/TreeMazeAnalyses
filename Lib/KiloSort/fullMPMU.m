@@ -14,7 +14,7 @@ Params = double([ops.NT ops.Nfilt ops.Th(3) ops.maxFR 10 ops.Nchan ops.Nrank pm 
 
 Params(3) = ops.Th(3);
 Params(4) = 50000;
-Params(5) = 50; 
+Params(5) = 50;
 
 if ops.GPU
     U0 = gpuArray(U);
@@ -37,7 +37,7 @@ for i = 1:Nrank
         WtW = WtW + wtw0;
         clear wtw0 utu0
 %         wtw0 = squeeze(wtw(:,i,:,j,:));
-        
+
     end
 end
 
@@ -52,7 +52,7 @@ Nbatch_buff = rez.temp.Nbatch_buff;
 Nbatch      = rez.temp.Nbatch;
 Nchan       = ops.Nchan;
 if ~ops.GPU
-   fW = rez.fW; % load fft-ed templates 
+   fW = rez.fW; % load fft-ed templates
 end
 % mWtW = mWtW - diag(diag(mWtW));
 
@@ -65,7 +65,7 @@ st3 = [];
 rez.st3 = [];
 
 if ops.verbose
-   fprintf('Time %3.0fs. Running the final template matching pass...\n', toc) 
+   fprintf('Time %3.0fs. Running the final template matching pass...\n', toc)
 end
 
 if Nbatch_buff<Nbatch
@@ -75,7 +75,7 @@ msg = [];
 
 if ~isempty(ops.nNeigh)
     nNeigh    = ops.nNeigh;
-    
+
     rez.cProj = zeros(5e6, nNeigh, 'single');
 
     % sort pairwise templates
@@ -84,7 +84,7 @@ if ~isempty(ops.nNeigh)
     cr    = mWtW .* (vld * vld');
     cr(isnan(cr)) = 0;
     [~, iNgsort] = sort(cr, 1, 'descend');
-    
+
     % save full similarity score
     rez.simScore = cr;
     maskTT = zeros(Nfilt, 'single');
@@ -99,7 +99,7 @@ if ~isempty(ops.nNeighPC)
     ixt = round(linspace(1, size(Wi,1), ops.nt0));
     Wi = Wi(ixt, 1:3);
     rez.cProjPC = zeros(5e6, 3*nNeighPC, 'single');
-    
+
     % sort best channels
     [~, iNch]       = sort(abs(U(:,:,1)), 1, 'descend');
     maskPC          = zeros(Nchan, Nfilt, 'single');
@@ -118,13 +118,13 @@ LAM = lam .* (20./mu).^2;
 NT = ops.NT;
 batchstart = 0:NT:NT*(Nbatch-Nbatch_buff);
 
-for ibatch = 1:Nbatch    
+for ibatch = 1:Nbatch
     if ibatch>Nbatch_buff
         offset = 2 * ops.Nchan*batchstart(ibatch-Nbatch_buff); % - ioffset;
         fseek(fid, offset, 'bof');
         dat = fread(fid, [NT ops.Nchan], '*int16');
     else
-       dat = DATA(:,:,ibatch); 
+       dat = DATA(:,:,ibatch);
     end
     if ops.GPU
         dataRAW = gpuArray(dat);
@@ -132,7 +132,11 @@ for ibatch = 1:Nbatch
         dataRAW = dat;
     end
     dataRAW = single(dataRAW);
-    dataRAW = dataRAW / ops.scaleproc;
+    if length(ops.scaleproc)>1
+      dataRAW=bsxfun(@rdivide,datr,ops.scaleproc');
+    else
+      dataRAW = dataRAW / ops.scaleproc;
+    end
     
     % project data in low-dim space
     if ops.GPU
@@ -151,7 +155,7 @@ for ibatch = 1:Nbatch
     else
          [st, id, x, errC, PCproj]= cpuMPmuFEAT(Params,data,fW,WtW, mu, lam .* (20./mu).^2, nu, ops);
     end
-    
+
     if ~isempty(st)
         if ~isempty(ops.nNeighPC)
             % PCA coefficients
@@ -172,21 +176,21 @@ for ibatch = 1:Nbatch
             % transform coefficients
             PCproj          = bsxfun(@rdivide, ...
                 bsxfun(@plus, PCproj, LAM.*mu), sqrt(1+LAM));
-            
+
             PCproj          = maskTT(:, id+1) .* PCproj;
             iPP             = reshape(find(maskTT(:, id+1)>0), nNeigh, []);
             rez.cProj(irun + (1:numel(st)), :) = PCproj(iPP)';
         end
         % increment number of spikes
         irun            = irun + numel(st);
-        
+
         if ibatch==1;
             ioffset         = 0;
         else
             ioffset         = ops.ntbuff;
         end
         st                  = st - ioffset;
-        
+
         %     nspikes2(1:size(W,2)+1, ibatch) = histc(id, 0:1:size(W,2));
         STT = cat(2, ops.nt0min + double(st) +(NT-ops.ntbuff)*(ibatch-1), ...
             double(id)+1, double(x), ibatch*ones(numel(x),1));
@@ -196,9 +200,9 @@ for ibatch = 1:Nbatch
 %         nsort = sort(sum(nspikes2,2), 'descend');
         fprintf(repmat('\b', 1, numel(msg)));
         msg             = sprintf('Time %2.2f, batch %d/%d,  NTOT %d\n', ...
-            toc, ibatch,Nbatch, size(st3,1));        
+            toc, ibatch,Nbatch, size(st3,1));
         fprintf(msg);
-        
+
     end
 end
 %%
@@ -218,7 +222,7 @@ if ~isempty(ops.nNeighPC)
         OneToN(isortNeigh)      = OneToN;
         rez.cProjPC(iSp, :,:)   = rez.cProjPC(iSp, OneToN, :);
     end
-    
+
     rez.cProjPC                 = permute(rez.cProjPC, [1 3 2]);
 end
 if ~isempty(ops.nNeigh)
@@ -249,7 +253,7 @@ for i = 1:Nfilt
    [~, itrough]     = min(wav0);
     [~, t2p]        = max(wav0(itrough:end));
     rez.t2p(i,1)    = t2p;
-    rez.t2p(i,2)    = itrough;   
+    rez.t2p(i,2)    = itrough;
 end
 
 rez.nbins           = histc(rez.st3(:,2), .5:1:Nfilt+1);

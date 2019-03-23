@@ -29,16 +29,16 @@ iperm = randperm(Nbatch);
 
 switch ops.initialize
     case 'fromData'
-        WUinit = optimizePeaks(ops,uproj);%does a scaled kmeans 
+        WUinit = optimizePeaks(ops,uproj);%does a scaled kmeans
         dWU    = WUinit(:,:,1:Nfilt);
         %             dWU = alignWU(dWU);
     otherwise
-        if ~isempty(getOr(ops, 'initFilePath', [])) && ~getOr(ops, 'saveInitTemps', 0)            
+        if ~isempty(getOr(ops, 'initFilePath', [])) && ~getOr(ops, 'saveInitTemps', 0)
             load(ops.initFilePath);
             dWU = WUinit(:,:,1:Nfilt);
         else
             initialize_waves0;
-            
+
             ipck = randperm(size(Winit,2), Nfilt);
             W = [];
             U = [];
@@ -47,23 +47,23 @@ switch ops.initialize
                 U = cat(3, U, Uinit(:, ipck));
             end
             W = alignW(W, ops);
-            
+
             dWU = zeros(nt0, Nchan, Nfilt, 'single');
             for k = 1:Nfilt
                 wu = squeeze(W(:,k,:)) * squeeze(U(:,k,:))';
                 newnorm = sum(wu(:).^2).^.5;
                 W(:,k,:) = W(:,k,:)/newnorm;
-                
+
                 dWU(:,:,k) = 10 * wu;
             end
             WUinit = dWU;
         end
 end
-if getOr(ops, 'saveInitTemps', 0) 
-    if ~isempty(getOr(ops, 'initFilePath', [])) 
-        save(ops.initFilePath, 'WUinit') 
+if getOr(ops, 'saveInitTemps', 0)
+    if ~isempty(getOr(ops, 'initFilePath', []))
+        save(ops.initFilePath, 'WUinit')
     else
-       warning('cannot save initialization templates because a savepath was not specified in ops.saveInitTemps'); 
+       warning('cannot save initialization templates because a savepath was not specified in ops.saveInitTemps');
     end
 end
 
@@ -117,29 +117,29 @@ while (i<=Nbatch * ops.nfullpasses+1)
         lam(:)  = lami(i);
         pm      = pmi(i);
     end
-    
+
     % some of the parameters change with iteration number
     Params = double([NT Nfilt Th maxFR 10 Nchan Nrank pm epu nt0]);
-    
+
     % update the parameters every freqUpdate iterations
     if i>1 &&  ismember(rem(i,Nbatch), iUpdate) %&& i>Nbatch
         dWU = gather_try(dWU);
-        
+
         % break bimodal clusters and remove low variance clusters
         if  ops.shuffle_clusters &&...
                 i>Nbatch && rem(rem(i,Nbatch), 4*400)==1    % i<Nbatch*ops.nannealpasses
             [dWU, dbins, nswitch, nspikes, iswitch] = ...
                 replace_clusters(dWU, dbins,  Nbatch, ops.mergeT, ops.splitT, WUinit, nspikes);
         end
-        
+
         dWU = alignWU(dWU, ops);
-        
+
         % restrict spikes to their peak group
         %         dWU = decompose_dWU(dWU, kcoords);
-        
+
         % parameter update
         [W, U, mu, UtU, nu] = decompose_dWU(ops, dWU, Nrank, rez.ops.kcoords);
-        
+
         if ops.GPU
             dWU = gpuArray(dWU);
         else
@@ -148,7 +148,7 @@ while (i<=Nbatch * ops.nfullpasses+1)
             fW = fft(W0, [], 1);
             fW = conj(fW);
         end
-        
+
         NSP = sum(nspikes,2);
         if ops.showfigures
 %             set(0,'DefaultFigureWindowStyle','docked')
@@ -168,21 +168,21 @@ while (i<=Nbatch * ops.nfullpasses+1)
             subplot(2,2,2)
             plot(W(:,:,1))
             title('timecourses of top PC')
-            
+
             subplot(2,2,3)
             imagesc(U(:,:,1))
             title('spatial mask of top PC')
-            
+
             drawnow
         end
         % break if last iteration reached
         if i>Nbatch * ops.nfullpasses; break; end
-        
+
         % record the error function for this iteration
         rez.errall(ceil(i/freqUpdate))          = nanmean(delta);
-        
+
     end
-    
+
     % select batch and load from RAM or disk
     ibatch = miniorder(i);
     if ibatch>Nbatch_buff
@@ -192,7 +192,7 @@ while (i<=Nbatch * ops.nfullpasses+1)
     else
         dat = DATA(:,:,ibatch);
     end
-    
+
     % move data to GPU and scale it
     if ops.GPU
         dataRAW = gpuArray(dat);
@@ -200,11 +200,15 @@ while (i<=Nbatch * ops.nfullpasses+1)
         dataRAW = dat;
     end
     dataRAW = single(dataRAW);
-    dataRAW = dataRAW / ops.scaleproc;
-    
+    if length(ops.scaleproc)>1
+      dataRAW=bsxfun(@rdivide,datr,ops.scaleproc');
+    else
+      dataRAW = dataRAW / ops.scaleproc;
+    end
+
     % project data in low-dim space
     data = dataRAW * U(:,:);
-    
+
     if ops.GPU
         % run GPU code to get spike times and coefficients
         [dWU, ~, id, x,Cost, nsp] = ...
@@ -213,22 +217,22 @@ while (i<=Nbatch * ops.nfullpasses+1)
         [dWU, ~, id, x,Cost, nsp] = ...
             mexMPregMUcpu(Params,dataRAW,fW,data,UtU,mu, lam .* (20./mu).^2, dWU, nu, ops);
     end
-    
+
     dbins = .9975 * dbins;  % this is a hard-coded forgetting factor, needs to become an option
     if ~isempty(id)
         % compute numbers of spikes
         nsp                = gather_try(nsp(:));
         nspikes(:, ibatch) = nsp;
-        
+
         % bin the amplitudes of the spikes
         xround = min(max(1, int32(x)), 100);
-        
+
         dbins(xround + id * size(dbins,1)) = dbins(xround + id * size(dbins,1)) + 1;
-        
+
         % estimate cost function at this time step
         delta(ibatch) = sum(Cost)/1e3;
     end
-    
+
     % update status
     if ops.verbose  && rem(i,20)==1
         nsort = sort(round(sum(nspikes,2)), 'descend');
@@ -239,7 +243,7 @@ while (i<=Nbatch * ops.nfullpasses+1)
             nsort(min(size(W,2), 300)), nsort(min(size(W,2), 400)));
         fprintf(msg);
     end
-    
+
     % increase iteration counter
     i = i+1;
 end
