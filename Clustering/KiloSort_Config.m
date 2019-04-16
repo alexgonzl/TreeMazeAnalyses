@@ -3,7 +3,7 @@ function ops=KiloSort_Config(datFile,headerFile,datDir)
 ops.GPU                 = 0; % whether to run this code on an Nvidia GPU (much faster, mexGPUall first)		
 ops.parfor              = 0; % whether to use parfor to accelerate some parts of the algorithm		
 ops.verbose             = 0; % whether to print command line progress		
-ops.showfigures         = 1; % whether to plot figures during optimization		
+ops.showfigures         = 0; % whether to plot figures during optimization		
 ops.Overwrite           = 1;
 
 ops.datatype            = 'bin';  % binary ('dat', 'bin') or 'openEphys'		
@@ -14,9 +14,9 @@ ops.root                = datDir; % 'openEphys' only: where raw files are
 ops.fs                  = 32000;        % sampling rate		(omit if already in chanMap file)
 ops.NchanTOT            = 4;           % total number of channels (omit if already in chanMap file)
 ops.Nchan               = 4;           % number of active channels (omit if already in chanMap file)
-ops.Nfilt               = 16;           % number of clusters to use (2-4 times more than Nchan, should be a multiple of 32)     		
+ops.Nfilt               = 12;           % number of clusters to use (2-4 times more than Nchan, should be a multiple of 32)     		
 ops.nNeighPC            = 4;           % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)		
-ops.nNeigh              = 16;           % visualization only (Phy): number of neighboring templates to retain projections of (16)		
+ops.nNeigh              = 12;           % visualization only (Phy): number of neighboring templates to retain projections of (16)		
 		
 % options for channel whitening		
 ops.whitening           = 'none'; % type of whitening (default 'full', for 'noSpikes' set options for spike detection below)		

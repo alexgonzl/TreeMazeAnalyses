@@ -18,17 +18,12 @@ for f =1:nFiles
     fInfo =  TaskTable.(taskID).Files.(fID);
     type = fInfo.type;
     fn = fInfo.filenames;
+    hfn = fInfo.headerFile;
     fprintf('fID: %s\n',fn);
     sp = fInfo.sp;
     
     if strcmp(type,'KiloSortCluster')
-        KiloSort_Master(fn,sp);
-       % try
-       %     KiloSort_Master(fn,sp);      
-       % catch e
-       %     disp('Error Running KiloSort');
-       %     disp(e.message);
-       % end
+       KiloSort_Master(fn,hfn,sp);
     end
     fprintf('Clustering Completed for %i\n\n',f);
 end

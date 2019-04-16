@@ -7,8 +7,8 @@ import shutil
 def session_entry(session_name,Files,sp):
     return {'session_name':str(session_name), 'Files':Files, 'nFiles':len(Files),'sp':str(sp)}
 
-def dict_entry(type,fn,sp):
-    return {'type':type,'filenames':str(fn),'sp':str(sp)}
+def dict_entry(type,fn,hfn,sp):
+    return {'type':type,'filenames':str(fn),'headerFile':str(hfn),'sp':str(sp)}
 
 if __name__ == '__main__':
     # Store taskID and TaskFile
@@ -51,7 +51,8 @@ if __name__ == '__main__':
                 sp = Path(str(session).strip('_Results')+'_KSClusters/tt_'+str(tt))
                 sp.mkdir(parents=True,exist_ok=True)
                 if (session / file).exists():
-                    Files[taskID] = dict_entry('KiloSortCluster',str(session / file),sp)
+                    hfile = 'header_tt_' + str(tt)+'.json'
+                    Files[taskID] = dict_entry('KiloSortCluster',str(session / file),str(session / hfile),sp)
                     taskID+=1
             if len(Files)>0:
                 Sessions[SessionCnt] = session_entry(session,Files,session)

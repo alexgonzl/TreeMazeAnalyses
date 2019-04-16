@@ -191,7 +191,12 @@ else
 end
 
 %Wrot    = ops.scaleproc * Wrot;
-Wrot = Wrot.*repmat(ops.scaleproc',1,4);
+spSize = size(ops.scaleproc);
+if spSize(1)==1
+    Wrot = Wrot.*repmat(ops.scaleproc',1,spSize(2));
+else
+    Wrot = Wrot.*repmat(ops.scaleproc,1,spSize(1));
+end
 
 fprintf('Time %3.0fs. Loading raw data and applying filters... \n', toc);
 
@@ -261,7 +266,7 @@ for ibatch = 1:Nbatch
     dataRAW = single(dataRAW);
     %
     %dataRAW = dataRAW / ops.scaleproc;
-     dataRAW=bsxfun(@rdivide,datr,ops.scaleproc);
+    dataRAW=bsxfun(@rdivide,datr,ops.scaleproc);
     
     if strcmp(ops.initialize, 'fromData') %&& rem(ibatch, 10)==1
         % find isolated spikes
