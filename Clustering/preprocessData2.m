@@ -30,16 +30,16 @@ if ~isempty(ops.chanMap)
         chanMapConn = ops.chanMap;
         xc = zeros(numel(chanMapConn), 1);
         yc = [1:1:numel(chanMapConn)]';
-        connected = true(numel(chanMap), 1);      
-        
+        connected = true(numel(chanMap), 1);
+
         ops.Nchan    = numel(connected);
         ops.NchanTOT = numel(connected);
     end
 else
     chanMap  = 1:ops.Nchan;
     connected = true(numel(chanMap), 1);
-    
-    chanMapConn = 1:ops.Nchan;    
+
+    chanMapConn = 1:ops.Nchan;
     xc = zeros(numel(chanMapConn), 1);
     yc = [1:1:numel(chanMapConn)]';
 end
@@ -50,6 +50,18 @@ else
 end
 NchanTOT = ops.NchanTOT;
 NT       = ops.NT ;
+
+scaleSize = size(ops.scaleproc);
+scaleDims = length(scaleSize);
+if scaleDims>1
+  if spSize(1)==1
+      ops.scaleproc = ops.scaleproc';
+  end
+  scaleSize = size(ops.scaleproc);
+  if scaleSize(1)~=NchanTOT
+    error('number of scale parameters mismatch with number of channels')
+  end
+end
 
 rez.ops         = ops;
 rez.xc = xc;
@@ -63,7 +75,7 @@ else
 end
 rez.connected   = connected;
 rez.ops.chanMap = chanMap;
-rez.ops.kcoords = kcoords; 
+rez.ops.kcoords = kcoords;
 
 d = dir(ops.fbinary);
 ops.sampsToRead = floor(d.bytes/NchanTOT/2);
@@ -113,7 +125,7 @@ end
 isproc = zeros(Nbatch, 1);
 while 1
     ibatch = ibatch + ops.nSkipCov;
-    
+
     offset = max(0, 2*NchanTOT*((NT - ops.ntbuff) * (ibatch-1) - 2*ops.ntbuff));
     if ibatch==1
         ioffset = 0;
@@ -122,9 +134,7 @@ while 1
     end
     fseek(fid, offset, 'bof');
     buff = fread(fid, [NchanTOT NTbuff], '*int16');
-    
-    %         keyboard;
-    
+
     if isempty(buff)
         break;
     end
@@ -140,12 +150,12 @@ while 1
     dataRAW = dataRAW';
     dataRAW = single(dataRAW);
     dataRAW = dataRAW(:, chanMapConn);
-    
+
     datr = filter(b1, a1, dataRAW);
     datr = flipud(datr);
     datr = filter(b1, a1, datr);
     datr = flipud(datr);
-    
+
     switch ops.whitening
         case 'noSpikes'
             smin      = my_min(datr, ops.loc_range, [1 2]);
@@ -158,7 +168,7 @@ while 1
         otherwise
             CC        = CC + (datr' * datr)/NT;
     end
-    
+
     if ibatch<=Nbatch_buff
         DATA(:,:,ibatch) = gather_try(int16( datr(ioffset + (1:NT),:)));
         isproc(ibatch) = 1;
@@ -191,11 +201,10 @@ else
 end
 
 %Wrot    = ops.scaleproc * Wrot;
-spSize = size(ops.scaleproc);
-if spSize(1)==1
-    Wrot = Wrot.*repmat(ops.scaleproc',1,spSize(2));
+if scaleDims>1
+  Wrot    = Wrot.*repmat(ops.scaleproc,1,NchanTOT);
 else
-    Wrot = Wrot.*repmat(ops.scaleproc,1,spSize(1));
+  Wrot    = ops.scaleproc * Wrot;
 end
 
 fprintf('Time %3.0fs. Loading raw data and applying filters... \n', toc);
@@ -207,7 +216,7 @@ if strcmp(ops.initialize, 'fromData')
     i0  = 0;
     ixt  = round(linspace(1, size(ops.wPCA,1), ops.nt0));
     wPCA = ops.wPCA(ixt, 1:3);
-    
+
     rez.ops.wPCA = wPCA; % write wPCA back into the rez structure
     uproj = zeros(1e6,  size(wPCA,2) * Nchan, 'single');
 end
@@ -227,7 +236,7 @@ for ibatch = 1:Nbatch
             ioffset = ops.ntbuff;
         end
         fseek(fid, offset, 'bof');
-        
+
         buff = fread(fid, [NchanTOT NTbuff], '*int16');
         if isempty(buff)
             break;
@@ -236,7 +245,7 @@ for ibatch = 1:Nbatch
         if nsampcurr<NTbuff
             buff(:, nsampcurr+1:NTbuff) = repmat(buff(:,nsampcurr), 1, NTbuff-nsampcurr);
         end
-        
+
         if ops.GPU
             dataRAW = gpuArray(buff);
         else
@@ -245,18 +254,18 @@ for ibatch = 1:Nbatch
         dataRAW = dataRAW';
         dataRAW = single(dataRAW);
         dataRAW = dataRAW(:, chanMapConn);
-        
+
         datr = filter(b1, a1, dataRAW);
         datr = flipud(datr);
         datr = filter(b1, a1, datr);
         datr = flipud(datr);
-        
+
         datr = datr(ioffset + (1:NT),:);
     end
-    
+
     datr    = datr * Wrot;
     %datr    = datr * Wrot;
-    
+
     if ops.GPU
         dataRAW = gpuArray(datr);
     else
@@ -266,37 +275,42 @@ for ibatch = 1:Nbatch
     dataRAW = single(dataRAW);
     %
     %dataRAW = dataRAW / ops.scaleproc;
-    dataRAW=bsxfun(@rdivide,datr,ops.scaleproc);
-    
+    if scaleDims>1
+      dataRAW=bsxfun(@rdivide,datr,ops.scaleproc');
+    else
+      dataRAW = dataRAW / ops.scaleproc;
+    end
+
+
     if strcmp(ops.initialize, 'fromData') %&& rem(ibatch, 10)==1
         % find isolated spikes
         [row, col, mu] = isolated_peaks(dataRAW, ops.loc_range, ops.long_range, ops.spkTh);
-        
+
         % find their PC projections
         uS = get_PCproj(dataRAW, row, col, wPCA, ops.maskMaxChannels);
-        
+
         uS = permute(uS, [2 1 3]);
         uS = reshape(uS,numel(row), Nchan * size(wPCA,2));
-        
+
         if i0+numel(row)>size(uproj,1)
             uproj(1e6 + size(uproj,1), 1) = 0;
         end
-        
+
         uproj(i0 + (1:numel(row)), :) = gather_try(uS);
         i0 = i0 + numel(row);
     end
-    
+
     if ibatch<=Nbatch_buff
         DATA(:,:,ibatch) = gather_try(datr);
     else
         datcpu  = gather_try(int16(datr));
         fwrite(fidW, datcpu, 'int16');
     end
-    
+
 end
 
 if strcmp(ops.initialize, 'fromData')
-   uproj(i0+1:end, :) = []; 
+   uproj(i0+1:end, :) = [];
 end
 Wrot        = gather_try(Wrot);
 rez.Wrot    = Wrot;
@@ -307,7 +321,3 @@ if ops.verbose
     fprintf('Time %3.2f. Whitened data written to disk... \n', toc);
     fprintf('Time %3.2f. Preprocessing complete!\n', toc);
 end
-
-
-rez.temp.Nbatch = Nbatch;
-rez.temp.Nbatch_buff = Nbatch_buff;
