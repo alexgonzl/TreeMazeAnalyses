@@ -80,7 +80,8 @@ if 1:
             print("Task Completed. Total Task Time {}".format(t2-t1))
         except:
             print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
-            sys.exit('Error processing task {} of {}'.format(taskID,taskFile))            
+            print ("Unable to process task {} of {}".format(taskID,taskFile))
+            #sys.exit('Error processing task {} of {}'.format(taskID,taskFile))            
 
 try:
     table_c[taskIDstr] = 1

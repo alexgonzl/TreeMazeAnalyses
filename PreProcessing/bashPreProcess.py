@@ -57,7 +57,7 @@ for t in jobs:
         fh.writelines("#SBATCH --mail-type=BEGIN,END,FAIL\n")
         fh.writelines("#SBATCH --time=08:00:00 \n\n")
         
-        fh.writelines("ml python/3.6")
+        fh.writelines("ml python/3.6\n")
         fh.writelines("python3 pySherlockBatch_Session.py -t {} -f {}\n".format(t,table))
 
     os.system("sbatch --partition=giocomo,owners --mem=8000 --cpus-per-task=2 {}".format(job_file))
