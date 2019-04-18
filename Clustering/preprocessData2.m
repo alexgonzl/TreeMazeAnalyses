@@ -54,7 +54,7 @@ NT       = ops.NT ;
 scaleSize = size(ops.scaleproc);
 scaleDims = length(scaleSize);
 if scaleDims>1
-  if spSize(1)==1
+  if scaleSize(1)==1
       ops.scaleproc = ops.scaleproc';
   end
   scaleSize = size(ops.scaleproc);
@@ -76,7 +76,6 @@ end
 rez.connected   = connected;
 rez.ops.chanMap = chanMap;
 rez.ops.kcoords = kcoords;
-
 d = dir(ops.fbinary);
 ops.sampsToRead = floor(d.bytes/NchanTOT/2);
 
@@ -314,6 +313,9 @@ if strcmp(ops.initialize, 'fromData')
 end
 Wrot        = gather_try(Wrot);
 rez.Wrot    = Wrot;
+
+rez.temp.Nbatch = Nbatch;
+rez.temp.Nbatch_buff = Nbatch_buff;
 
 fclose(fidW);
 fclose(fid);

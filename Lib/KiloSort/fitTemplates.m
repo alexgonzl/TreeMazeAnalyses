@@ -201,7 +201,7 @@ while (i<=Nbatch * ops.nfullpasses+1)
     end
     dataRAW = single(dataRAW);
     if length(ops.scaleproc)>1
-      dataRAW=bsxfun(@rdivide,datr,ops.scaleproc');
+      dataRAW=bsxfun(@rdivide,dataRAW,ops.scaleproc');
     else
       dataRAW = dataRAW / ops.scaleproc;
     end

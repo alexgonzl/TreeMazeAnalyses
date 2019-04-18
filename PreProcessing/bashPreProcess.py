@@ -7,9 +7,9 @@ from pathlib import Path
 job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
 
-ID = 'Li'
-date = '3_13_2019'
-overwriteFlag=0
+ID = 'Cl'
+date = '4_17_2019'
+overwriteFlag=1
 
 date_obj = datetime.date.today()
 date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
@@ -49,13 +49,16 @@ for t in jobs:
     job_file = os.path.join(job_directory,"{}_t{}.job".format(ID,t))
 
     with open(job_file,"w+") as fh:
-        fh.writelines("#!/bin/bash\n")
-        fh.writelines("ml python/3.6.1\n")
-        fh.writelines("#SBATCH --job-name={}_t{}.job\n".format(ID,t))
-        fh.writelines("#SBATCH --error=.out/{}_t{}.err\n".format(ID,t))
-        fh.writelines("#SBATCH --time=08:00:00\n")
-        fh.writelines("#SBATCH --mail-type=ALL\n")
+        fh.writelines("#!/bin/bash\n\n")
+        fh.writelines("#SBATCH --job-name={0}_t{1}.job\n".format(ID,t))
+        fh.writelines("#SBATCH -e .job/{0}_t{1}.e \n".format(ID,t))
+        fh.writelines("#SBATCH -o .job/{0}_t{1}.o \n".format(ID,t))
+        fh.writelines("#SBATCH --mail-user=alexg8@stanford.edu\n")
+        fh.writelines("#SBATCH --mail-type=BEGIN,END,FAIL\n")
+        fh.writelines("#SBATCH --time=08:00:00 \n\n")
+        
+        fh.writelines("ml python/3.6")
         fh.writelines("python3 pySherlockBatch_Session.py -t {} -f {}\n".format(t,table))
 
-    os.system("sbatch --partition=giocomo,owners --mem=8000 --cpus-per-task=2 --mail-user=alexg8@stanford.edu {}".format(job_file))
+    os.system("sbatch --partition=giocomo,owners --mem=8000 --cpus-per-task=2 {}".format(job_file))
     time.sleep(0.5)
