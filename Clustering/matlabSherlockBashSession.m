@@ -1,4 +1,4 @@
-function matlabSherlockBashSession(task, tableFile)
+function matlabSherlockBashSession(task, tableFile,overwriteFlag)
 
 fullTablePath = fullfile(pwd,'TasksDir',tableFile);
 if exist(fullTablePath)
@@ -22,8 +22,12 @@ for f =1:nFiles
     fprintf('fID: %s\n',fn);
     sp = fInfo.sp;
     
-    if strcmp(type,'KiloSortCluster')
-       KiloSort_Master(fn,hfn,sp);
+    if ~exist(fullfile(sp,'rez.mat')) or overwriteFlag
+      if strcmp(type,'KiloSortCluster')
+        KiloSort_Master(fn,hfn,sp);
+      end
+      fprintf('Clustering Completed for %i\n\n',f);
+    else
+      fprintf('Cluster File %i Exists and Overwrite = False.\n\n',f);
     end
-    fprintf('Clustering Completed for %i\n\n',f);
 end
