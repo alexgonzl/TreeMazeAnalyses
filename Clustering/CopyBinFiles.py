@@ -3,9 +3,15 @@ import numpy as np
 from pathlib import Path
 from shutil import copy2
 
+# PATCH! 4/25/19
+# copy of tetrode binaries to clustering folders. this is required to run the current version of phy
+# two solutions: 
+# (1) incorporate this copy in the clustering itself
+# (2) make phy read file binaries at other locations other than 
+# where the clustering results are.
+
 job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
-
 
 ID = 'Li'
 date = '3_13_2019'
