@@ -70,39 +70,40 @@ def GetSessionClusters(session):
 def CopyClustersToOak(localDir,oakDir):
     localDir = Path(localDir)
     oakDir = Path(oakDir)
-    for localSummary in localDir.glob("*_ClusteringSummary.json"):
-        SummaryName = localSummary.name
-        fullPathFN = str(localSummary)
+    for SummaryFile in oakDir.glob("*_ClusteringSummary.json"):
 
-        if not filecmp.cmp(fullPathFN,str(oakDir/SummaryName),shallow=True):
-            shutil.copyfile(fullPathFN,str(oakDir/SummaryName))
-            print('updated file summary file')
-        else:
-            print('summary file is the same, skipping copy.')
-
-        with fullPathFN.open(mode='r') as f:
+        with SummaryFile.open(mode='r') as f:
             cluster_summary = json.load(f)
 
-        for animal in cluster_summary.keys():
+        for session in cluster_summary['Sessions']:
             # copy individual tetrode clusters
+            sessionName = session+'_KSClusters'
             notUpDatedList = []
-            for date in cluster_summary[animal].keys():
-                for task in cluster_summary[animal][date].keys():
-                    sessionName = animal+'_'+task+'_'+date+'_KSClusters'
-                    notUpDatedList = []
-                    for tt in np.arange(1,nTTs+1):
-                        fn = localDir/sessionName/('tt_'+str(tt))/'cluster_group.tsv'
+            for tt in np.arange(1,nTTs+1):
+                try:
+                    fn = localDir/sessionName/('tt_'+str(tt))/'cluster_group.tsv'
+                    if fn.exists():
                         sp = oakDir/sessionName/('tt_'+str(tt))/'cluster_group.tsv'
-                        if not filecmp.cmp(str(fn),str(sp),shallow=True):
-                            shutil.copyfile(str(fn),str(sp))
+                        if sp.exists():
+                            if not filecmp.cmp(str(fn),str(sp),shallow=True):
+                                shutil.copy2(str(fn),str(sp))
+                            else:
+                                notUpDatedList.append(tt)
                         else:
-                            notUpDatedList.append(tt)
-                    if len(notUpDatedList)==16:
-                        print("{}: All tetrodes have already been clustered. ".format(sessionName))
-                    elif len(notUpDatedList)==0:
-                        print("{}: Updated all tetrode clusters".format(sessionName))
+                            shutil.copy2(str(fn),str(sp))
                     else:
-                        print("{}: Indetical cluster files, no updates for TTs {}".format(sessionName, notUpDatedList))
+                        notUpDatedList.append(tt)
+                except:
+                    notUpDatedList.append(tt)
+                    print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+
+            if len(notUpDatedList)==16:
+                print("{}: No Clusters Updated. ".format(sessionName))
+            elif len(notUpDatedList)==0:
+                print("{}: Updated all tetrode clusters".format(sessionName))
+            else:
+                print("{}: Indetical cluster files, no updates for TTs {}".format(sessionName, notUpDatedList))
+            print()
 
 def GetClusterTable(cl_summary, oakPath, localPath):
     '''
@@ -148,18 +149,29 @@ def GetClusterTable(cl_summary, oakPath, localPath):
                 print("Error updating session {}".format(sn))
                 print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
     print(d)
+    localSave=0
+    fn = 'ClusterTableSummary.csv'
     try:
-        d.to_csv(str(oakPath/'ClusterTableSummary.csv'))
-        print('File Saved to {}'.format(oakPath))
-    except:
-        print('Could not save table to Oak.')
-        print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
-    try:
-        d.to_csv(str(localPath/'ClusterTableSummary.csv'))
+        d.to_csv(str(localPath/fn))
+        localSave=1
         print('File Saved to {}'.format(oakPath))
     except:
         print('Could not save file locally.')
         print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+    try:
+        d.to_csv(str(oakPath/fn))
+        print('File Saved to {}'.format(oakPath))
+    except:
+        if localSave:
+            try:
+                shutil.copy2(str(localPath/fn),str(oakPath/fn))
+                print('File copy from local to  {}'.format(oakPath))
+            except:
+                print('Could not save table to Oak.')
+                print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+        else:
+            print('Could not save table to Oak.')
+            print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
 
 def UpdateClusterInfo(oakPath, animal, localPath):
     oakPath = Path(oakPath) # convert to Path object
@@ -191,7 +203,7 @@ def UpdateClusterInfo(oakPath, animal, localPath):
                 assert animal==an, 'Error, invalid session found.'
                 task = tmp[1]
                 date = tmp[2]
-                if not date in cl_summary[animal].keys() or overwrite:
+                if not date in cl_summary[animal].keys():
                     cl_summary[animal][date]={}
                 if not task in cl_summary[animal][date].keys() or overwrite:
                     cl_summary[animal][date][task] = {}
@@ -201,24 +213,27 @@ def UpdateClusterInfo(oakPath, animal, localPath):
             except:
                 print('Unable to process session {}'.format(session))
                 print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
-                pass
     # Save
-    try:
-        with cl_summary_fn.open(mode='w') as f:
-            json.dump(cl_summary,f,indent=4)
-    except:
-        print('unable to update json cluster info file in oak. probably permission issue.')
-        print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
-
     try:
         localPath = Path(localPath)
         if localPath.exists():
             fn = cl_summary_fn.name
             with (localPath/fn).open(mode='w') as f:
                 json.dump(cl_summary,f,indent=4)
+                print('File Saved locally.')
     except:
         print('unable to save json file locally.')
         print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+
+    try:
+        with cl_summary_fn.open(mode='w') as f:
+            json.dump(cl_summary,f,indent=4)
+            print('File Saved into OAK')
+    except:
+        print('unable to update json cluster info file in oak. probably permission issue.')
+        print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+
+
 
     GetClusterTable(cl_summary, oakPath, localPath)
     # print info
@@ -240,3 +255,11 @@ def dict_argmax(d):
     for k in d.keys():
         d2.append(len(d[k]))
     return np.argmax(d2)
+
+if __name__ == "__main__":
+    animal = 'Li'
+    oakPath = Path('/mnt/o/giocomo/alexg/Clustered/',animal)
+    localPath = Path('/mnt/c/Users/alexg8/Documents/Data/',animal,'Clustered')
+
+    UpdateClusterInfo(oakPath,animal,localPath)
+    CopyClustersToOak(localPath,oakPath)

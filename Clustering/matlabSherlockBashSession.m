@@ -21,7 +21,7 @@ for f =1:nFiles
     hfn = fInfo.headerFile;
     fprintf('fID: %s\n',fn);
     sp = fInfo.sp;
-    
+
     if ~exist(fullfile(sp,'rez.mat')) | overwriteFlag
       if strcmp(type,'KiloSortCluster')
         KiloSort_Master(fn,hfn,sp);
@@ -29,5 +29,9 @@ for f =1:nFiles
       fprintf('Clustering Completed for %i\n\n',f);
     else
       fprintf('Cluster File %i Exists and Overwrite = False.\n\n',f);
+    end
+    fn_s = strcat('tt_',str(f),'.bin')
+    if ~exists(fullfile(sp,fn_s))
+      copyfile(fn,sp)
     end
 end
