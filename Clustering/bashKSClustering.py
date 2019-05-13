@@ -8,8 +8,8 @@ job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
 
 
-ID = 'Li'
-date = '4_29_2019'
+ID = 'Ne'
+date = '5_10_2019'
 overwriteFlag=0
 
 date_obj = datetime.date.today()
@@ -41,5 +41,5 @@ for t in np.arange(1,nJobs+1):
         fun = "try matlabSherlockBashSession(%s,'%s',%s); catch; end; quit" % (t,table,overwriteFlag)
         fh.writelines('matlab -nojvm -r "%s" \n' % (fun))
 
-    os.system("sbatch --partition=giocomo,owners --mem=8000 --cpus-per-task=2 {}".format(job_file))
+    os.system("sbatch --partition=giocomo,owners --mem=16000 --cpus-per-task=2 {}".format(job_file))
     time.sleep(0.5)

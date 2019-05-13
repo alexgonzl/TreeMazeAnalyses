@@ -22,7 +22,7 @@ for f =1:nFiles
     fprintf('fID: %s\n',fn);
     sp = fInfo.sp;
     
-    if ~exist(fullfile(sp,'rez.mat')) or overwriteFlag
+    if ~exist(fullfile(sp,'rez.mat')) | overwriteFlag
       if strcmp(type,'KiloSortCluster')
         KiloSort_Master(fn,hfn,sp);
       end
