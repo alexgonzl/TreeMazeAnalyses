@@ -1,7 +1,7 @@
-import os, json,sys, time, datetime
+import os, json,sys, time, datetime, filecmp
 import numpy as np
 from pathlib import Path
-from shutil import copy2
+from shutil import copy
 
 # PATCH! 4/25/19
 # copy of tetrode binaries to clustering folders. this is required to run the current version of phy
@@ -15,9 +15,6 @@ job_directory.mkdir(parents=True, exist_ok=True)
 
 ID = 'Li'
 date = '3_13_2019'
-overwriteFlag=1
-
-date_obj = datetime.date.today()
 
 table = "Clustering_{}_{}.json".format(ID,date)
 TasksDir = Path.cwd()/'TasksDir'
@@ -34,7 +31,11 @@ for t in np.arange(1,nJobs+1):
     nFiles = len(session)
     print()
     for f in np.arange(1,nFiles+1):
-        copy2(session[str(f)]['filenames'],session[str(f)]['sp'])
-        print('Copy complted for file {}'.format(session[str(f)]['filenames']))
-        
-    
+        fn = 'tt_{}.bin'.format(f)
+        f1=session[str(f)]['filenames']
+        f2=str(Path(session[str(f)]['sp'],fn))
+        if not filecmp.cmp(f1,f2:
+            copy(f1,f2)
+            print('Copy completed for file {}'.format(f1))
+        else:
+            print('File {} already exists at destination. '.format(f1))
