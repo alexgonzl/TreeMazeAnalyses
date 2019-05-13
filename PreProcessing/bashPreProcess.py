@@ -7,9 +7,9 @@ from pathlib import Path
 job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
 
-ID = 'Cl'
-date = '4_17_2019'
-overwriteFlag=1
+ID = 'Ne'
+date = '5_10_2019'
+overwriteFlag=0
 
 date_obj = datetime.date.today()
 date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
