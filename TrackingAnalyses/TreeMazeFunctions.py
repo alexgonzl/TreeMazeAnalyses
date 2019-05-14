@@ -20,7 +20,6 @@ from descartes import PolygonPatch
 # Constants
 ################################################################################
 nWells = 6
-step = 0.02 # 20 ms time steps
 EventNames  = ['RH','RC','R1','R2','R3','R4','RG','AR','DH','DC','D1','D2','D3','D4',
              'LH','LC','L1','L2','L3','L4','CL','CR','TrID','cTr','iTr','LDs','RDs']
 nEventTypes = len(EventNames) # total number of events
