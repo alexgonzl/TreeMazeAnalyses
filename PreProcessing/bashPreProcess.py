@@ -7,9 +7,9 @@ from pathlib import Path
 job_directory = Path("./.job")
 job_directory.mkdir(parents=True, exist_ok=True)
 
-ID = 'Ne'
-date = '5_10_2019'
-overwriteFlag=0
+ID = 'P'
+date = '5_17_2019'
+overwriteFlag=1
 
 date_obj = datetime.date.today()
 date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
@@ -45,7 +45,7 @@ else:
     jobs = np.asarray(jobs)
 
 for t in jobs:
-#for t in [1,2]:
+#for t in [1]:
     job_file = os.path.join(job_directory,"{}_t{}.job".format(ID,t))
 
     with open(job_file,"w+") as fh:
@@ -60,5 +60,5 @@ for t in jobs:
         fh.writelines("ml python/3.6\n")
         fh.writelines("python3 pySherlockBatch_Session.py -t {} -f {}\n".format(t,table))
 
-    os.system("sbatch --partition=giocomo,owners --mem=8000 --cpus-per-task=2 {}".format(job_file))
+    os.system("sbatch --partition=giocomo,owners --mem=32000 --cpus-per-task=4 {}".format(job_file))
     time.sleep(0.5)

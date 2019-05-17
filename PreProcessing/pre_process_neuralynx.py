@@ -60,6 +60,10 @@ def get_process_save_probe(task, save_format='bin', AmpPercentileThr=0.975, over
 
     '''
 
+    csc_files = task['filenames']
+    sp = Path(task['sp'])
+    ss = task['subSessionID']
+
     # Unpack the probe information.
     if task['type']=='tt':
         tt_id = task['tt_id']
@@ -72,10 +76,6 @@ def get_process_save_probe(task, save_format='bin', AmpPercentileThr=0.975, over
             fn = 'probe'
         else:
             fn = 'probe_{}'.format(ss)
-
-    csc_files = task['filenames']
-    sp = Path(task['sp'])
-    ss = task['subSessionID']
 
     if not (sp / (fn + '.' + save_format)).exists() or overwriteFlag :
         # Filter Parameters (must excist in the same directory)
@@ -97,7 +97,7 @@ def get_process_save_probe(task, save_format='bin', AmpPercentileThr=0.975, over
             sig,time_stamps = get_csc(f[0])
             nSamps = len(sig)
         except:
-            sys.exit('Could not read first channel. Aborting.')
+            print('Could not read first channel. Aborting.',  sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
 
         # save time stamps
         save_timestamps(time_stamps, sp, save_format)

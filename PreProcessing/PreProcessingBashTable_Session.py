@@ -11,7 +11,7 @@ def dict_entry(type,fn,sp,subSessionID,tt=-1):
     if type=='tt':
         return {'type':type,'filenames':fn,'tt_id':str(tt),'sp':str(sp),'subSessionID':str(subSessionID)}
     else:
-        return {'type':type,'filenames':str(fn),'sp':str(sp),'subSessionID':str(subSessionID)}
+        return {'type':type,'filenames':fn,'sp':str(sp),'subSessionID':str(subSessionID)}
 
 if __name__ == '__main__':
     # Store taskID and TaskFile
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         print("Usage: %s -a AnimalID -v 'Volume/path/to/folders'" % sys.argv[0])
         sys.exit('Invalid input.')
 
-    myopts, args = getopt.getopt(sys.argv[1:],"a:v:")
+    myopts, args = getopt.getopt(sys.argv[1:],"a:v:p:")
     for o, a in myopts:
         if o == '-a':
             AnimalID=str(a)
@@ -92,43 +92,45 @@ if __name__ == '__main__':
                                 Files[taskID] = dict_entry('tt',TT,sp,tt=tt,subSessionID=str(ss).zfill(4))
                                 taskID+=1
             else:
-                Probe =[]
-                chAbsentFlag=False
-                for ch in np.arange(1,nChannels+1):
-                    try:
-                        if ss==0:
-                            csc = 'CSC{}.ncs'.format(ch)
-                        else:
-                            csc = 'CSC{}_{}.ncs'.format(ch,str(ss).zfill(4))
-
-                        if not (session / csc).exists():
+                
+                for ss in np.arange(nSubSessions):
+                    Probe =[]
+                    chAbsentFlag=False
+                    for ch in np.arange(1,nChannels+1):
+                        try:
+                            if ss==0:
+                                csc = 'CSC{}.ncs'.format(ch)
+                            else:
+                                csc = 'CSC{}_{}.ncs'.format(ch,str(ss).zfill(4))
+                                
+                            if not (session / csc).exists(): # file does not exists
+                                chAbsentFlag = True
+                            elif not (session / csc).stat().st_size>minFileSize: # file exists but it is empty
+                                chAbsentFlag = True
+                            else: # file exists and its valid
+                                chAbsentFlag = False
+                                Probe.append(str(session /csc))
+                        except:
                             chAbsentFlag = True
-                        elif not (session / csc).stat().st_size>minFileSize:
-                            chAbsentFlag = True
-                        else:
-                            chAbsentFlag = False
-                            Probe.append(str(session /csc))
-                    except:
-                        chAbsentFlag = True
-                        print('Could not assign task to {}'.format(csc))
-                        print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
-                        continue
-                if not chAbsentFlag:
-                    Files[taskID] = dict_entry('probe',Probe,sp,subSessionID=str(ss).zfill(4))
-                    taskID+=1
+                            #print('Could not assign task to {}'.format(csc))
+                            print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+                            continue
+                    if not chAbsentFlag:
+                        Files[taskID] = dict_entry('probe',Probe,sp,subSessionID=str(ss).zfill(4))
+                        taskID+=1
 
             # valid vt
             for vt in session.glob('*.nvt'):
                 try:
                     if vt.stat().st_size>minFileSize:
                         if vt.match('VT1.nvt'):
-                            Files[taskID] = dict_entry('vt',vt,sp,subSessionID='0000')
+                            Files[taskID] = dict_entry('vt',str(vt),sp,subSessionID='0000')
                             taskID+=1
                         else:
                             for ss in np.arange(1,nSubSessions):
                                 ss_str = str(ss).zfill(4)
                                 if vt.match('VT1_{}.nvt'.format(ss_str)):
-                                    Files[taskID] = dict_entry('vt',vt,sp,subSessionID=ss_str)
+                                    Files[taskID] = dict_entry('vt',str(vt),sp,subSessionID=ss_str)
                                     taskID+=1
                     else:
                         validSubSessions[ss]=False
@@ -142,12 +144,12 @@ if __name__ == '__main__':
                 try:
                     if ev.stat().st_size>minFileSize:
                         if ev.match('Events.nev'):
-                            Files[taskID] = dict_entry('ev',ev,sp,subSessionID='0000')
+                            Files[taskID] = dict_entry('ev',str(ev),sp,subSessionID='0000')
                         else:
                             for ss in np.arange(1,nSubSessions):
                                 ss_str = str(ss).zfill(4)
                                 if ev.match('Events_{}.nev'.format(ss_str)):
-                                    Files[taskID] = dict_entry('ev',ev,sp,subSessionID=ss_str)
+                                    Files[taskID] = dict_entry('ev',str(ev),sp,subSessionID=ss_str)
                                     taskID+=1
                 except:
                     print('Could not assign task to {}'.format(ev))
