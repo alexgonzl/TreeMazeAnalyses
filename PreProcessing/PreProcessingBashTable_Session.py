@@ -18,6 +18,7 @@ if __name__ == '__main__':
     AnimalID=''
     volumePath=''
     minFileSize = 16384
+    TetrodeRecording = 1
     nTetrodes = 16
 
     if len(sys.argv)<3:
@@ -26,12 +27,19 @@ if __name__ == '__main__':
 
     myopts, args = getopt.getopt(sys.argv[1:],"a:v:")
     for o, a in myopts:
-        print(o,a)
         if o == '-a':
             AnimalID=str(a)
         elif o == '-v':
             volumePath = Path(str(a))
-            print(type(volumePath))
+        elif o == '-p':
+            if str(a)=='NR32':
+                TetrodeRecording = 0
+                nChannels = 32
+            elif str(a)=='TT16':
+                TetrodeRecording = 1
+                nTetrodes=16
+            else:
+                sys.exit('Invalid Probe Type.')
         else:
             print("Usage: %s -a AnimalID -v 'Volume/path/to/folders'" % sys.argv[0])
             sys.exit('Invalid input. Aborting.')
@@ -55,32 +63,59 @@ if __name__ == '__main__':
         taskID = 1
         try:
             # Look for valid records e.g. CSC1d.ncs
-            for tt in np.arange(1,nTetrodes+1):
-                for ss in np.arange(nSubSessions):
-                    TT=[]
-                    chAbsentFlag = False
-                    for ch in ['a','b','c','d']:
-                        try:
-                            if ss ==0:
-                                csc = 'CSC{}{}.ncs'.format(tt,ch)
-                            else:
-                                csc = 'CSC{}{}_{}.ncs'.format(tt,ch,str(ss).zfill(4))
+            if TetrodeRecording:
+                for tt in np.arange(1,nTetrodes+1):
+                    for ss in np.arange(nSubSessions):
+                        if TetrodeRecording:
+                            TT=[]
+                            chAbsentFlag = False
+                            for ch in ['a','b','c','d']:
+                                try:
+                                    if ss ==0:
+                                        csc = 'CSC{}{}.ncs'.format(tt,ch)
+                                    else:
+                                        csc = 'CSC{}{}_{}.ncs'.format(tt,ch,str(ss).zfill(4))
 
-                            if not (session / csc).exists():
-                                chAbsentFlag = True
-                            elif not (session / csc).stat().st_size>minFileSize:
-                                chAbsentFlag = True
-                            else:
-                                chAbsentFlag = False
-                                TT.append(str(session /csc))
-                        except:
+                                    if not (session / csc).exists():
+                                        chAbsentFlag = True
+                                    elif not (session / csc).stat().st_size>minFileSize:
+                                        chAbsentFlag = True
+                                    else:
+                                        chAbsentFlag = False
+                                        TT.append(str(session /csc))
+                                except:
+                                    chAbsentFlag = True
+                                    print('Could not assign task to {}'.format(csc))
+                                    print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+                                    continue
+                            if not chAbsentFlag:
+                                Files[taskID] = dict_entry('tt',TT,sp,tt=tt,subSessionID=str(ss).zfill(4))
+                                taskID+=1
+            else:
+                Probe =[]
+                chAbsentFlag=False
+                for ch in np.arange(1,nChannels+1):
+                    try:
+                        if ss==0:
+                            csc = 'CSC{}.ncs'.format(ch)
+                        else:
+                            csc = 'CSC{}_{}.ncs'.format(ch,str(ss).zfill(4))
+
+                        if not (session / csc).exists():
                             chAbsentFlag = True
-                            print('Could not assign task to {}'.format(csc))
-                            print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
-                            continue
-                    if not chAbsentFlag:
-                        Files[taskID] = dict_entry('tt',TT,sp,tt=tt,subSessionID=str(ss).zfill(4))
-                        taskID+=1
+                        elif not (session / csc).stat().st_size>minFileSize:
+                            chAbsentFlag = True
+                        else:
+                            chAbsentFlag = False
+                            Probe.append(str(session /csc))
+                    except:
+                        chAbsentFlag = True
+                        print('Could not assign task to {}'.format(csc))
+                        print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
+                        continue
+                if not chAbsentFlag:
+                    Files[taskID] = dict_entry('Probe',Probe,sp,subSessionID=str(ss).zfill(4))
+                    taskID+=1
 
             # valid vt
             for vt in session.glob('*.nvt'):

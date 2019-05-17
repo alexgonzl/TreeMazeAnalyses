@@ -125,8 +125,6 @@ def getPositionMat(x,y,t,step):
     t4=time.time()
     print('Creating Position Matrix Completed : {0:.2f} s'.format(t4-t3))
 
-    PosDat['PosMat'] = PosMat
-
     # get segment directions
     SegDirMat = getSegmentDirs(PosZones,tp)
     t5=time.time()

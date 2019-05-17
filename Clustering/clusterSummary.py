@@ -17,6 +17,7 @@ def GetSessionClusters(session):
     table = {}
     table['session'] = session.name
     table['Clustered']=0
+    table['path'] = str(session)
     table['nCells'] = 0
     table['nMua'] = 0
     table['cell_IDs'] = {}
@@ -78,6 +79,9 @@ def CopyClustersToOak(localDir,oakDir):
         for session in cluster_summary['Sessions']:
             # copy individual tetrode clusters
             sessionName = session+'_KSClusters'
+            existsList = []
+            notExistsList = []
+            updatedList = []
             notUpDatedList = []
             for tt in np.arange(1,nTTs+1):
                 try:
@@ -85,24 +89,42 @@ def CopyClustersToOak(localDir,oakDir):
                     if fn.exists():
                         sp = oakDir/sessionName/('tt_'+str(tt))/'cluster_group.tsv'
                         if sp.exists():
+                            # if it exists @ destination but has been change, overwrite.
                             if not filecmp.cmp(str(fn),str(sp),shallow=True):
                                 shutil.copy2(str(fn),str(sp))
+                                updatedList.append(tt)
+                                print('{}: TT {} overwrite.'.format(session,tt))
                             else:
+                            #otherwise ignore.
+                                existsList.append(tt)
                                 notUpDatedList.append(tt)
                         else:
+                            # if it doesn't exist, copy
                             shutil.copy2(str(fn),str(sp))
+                            updatedList.append(tt)
+                            print('{}: TT {} Copy.'.format(session,tt))
                     else:
-                        notUpDatedList.append(tt)
+                        notExistsList.append(tt)
                 except:
                     notUpDatedList.append(tt)
+                    print("Possible Mounting Issue. Try umounting/remounting the Oak partition.")
                     print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
 
-            if len(notUpDatedList)==16:
-                print("{}: No Clusters Updated. ".format(sessionName))
-            elif len(notUpDatedList)==0:
-                print("{}: Updated all tetrode clusters".format(sessionName))
+            if len(existsList)==16:
+                print("{}: All Files Exists in Cluster.".format(session))
+            elif len(existsList)>0:
+                print("{}:\n Files exists and not updated TTs {} \n Files do not exists {} ".format(session, existsList, notExistsList))
             else:
-                print("{}: Indetical cluster files, no updates for TTs {}".format(sessionName, notUpDatedList))
+                print("{}: No Cluster Files to Copy.".format(session))
+
+            if len(updatedList)>0:
+                print("{}: Updated Cluster Files: {}".format(session, updatedList))
+            # if len(notUpDatedList)==16:
+            #     print("{}: No Clusters Updated. ".format(session))
+            # elif len(notUpDatedList)==0:
+            #     print("{}: Updated all tetrode clusters".format(session))
+            # else:
+            #     print("{}: Indetical cluster files, no updates for TTs {}".format(session, notUpDatedList))
             print()
 
 def GetClusterTable(cl_summary, oakPath, localPath):
@@ -175,11 +197,12 @@ def GetClusterTable(cl_summary, oakPath, localPath):
 
 def UpdateClusterInfo(oakPath, animal, localPath):
     oakPath = Path(oakPath) # convert to Path object
-    overwrite=1
+    overwrite=0
     #Cluster Summary Json File. If it doesn't exist, create it.
     cnt =0
     cl_summary_fn = oakPath / ('{}_ClusteringSummary.json'.format(animal))
     if cl_summary_fn.exists() and overwrite==0:
+        print('Loading Existing Summary File.')
         with cl_summary_fn.open() as f:
             cl_summary = json.load(f)
     else: # new summary
@@ -189,6 +212,7 @@ def UpdateClusterInfo(oakPath, animal, localPath):
         cl_summary['Sessions'] = {}
     for session in oakPath.glob('*_KSClusters'):
         try:
+            print(session.name, cl_summary[sessions][session.name]==0)
             if cl_summary[sessions][session.name]==0 or overwrite:
                 updateSession=1
             else:
@@ -261,5 +285,7 @@ if __name__ == "__main__":
     oakPath = Path('/mnt/o/giocomo/alexg/Clustered/',animal)
     localPath = Path('/mnt/c/Users/alexg8/Documents/Data/',animal,'Clustered')
 
-    UpdateClusterInfo(oakPath,animal,localPath)
     CopyClustersToOak(localPath,oakPath)
+
+    # Bug here, doesn't seem to just read exisiting file.
+    #UpdateClusterInfo(oakPath,animal,localPath)

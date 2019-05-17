@@ -8,7 +8,7 @@
 # robust_stats.py
 #
 # written by Alex Gonzalez
-# last edited 10/4/18
+# last edited 10/5/19
 # Stanford University
 # Giocomo Lab
 ###############################################################################
@@ -24,16 +24,12 @@ import h5py, json
 import nept
 from dataConvert import getInt16ConvFactor,data2int16
 
-def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, overwriteFlag=0):
+def get_process_save_probe(task, save_format='bin', AmpPercentileThr=0.975, overwriteFlag=0):
     ''' This function takes a list of neuralynx continously sampled channel (csc) files,
-     performs initial preprocessing, data QA, and saves all the channels from a tetrode together.
+     performs initial preprocessing, data QA, and saves all the channels from a probe together.
      The files should come from the same recording, have the same length, and follow the naming
      format. The naming format is as follows:
-     Tetrode 1 files -> CSC1a.csc, CSC1b.csc, CSC1c.csc, CSC1d.csc
-
-     This function can be used in parallel by having the csc_list only include a
-     subset of tetrodes, and calling it multiple times to complete the set.
-     If there are 16 tetrodes, it can be processed with 16 streams.
+     Files -> CSC1.csc, CSC2.csc, etc.
 
      Parameters
     ----------
@@ -64,18 +60,24 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
     '''
 
-    # Unpack the tetrode information.
-    tt_id = task['tt_id']
+    # Unpack the probe information.
+    if task['type']=='tt':
+        tt_id = task['tt_id']
+        if ss=='0000':
+            fn = 'tt_{}'.format(tt_id)
+        else:
+            fn = 'tt_{}_{}'.format(tt_id,ss)
+    else:
+        if ss=='0000':
+            fn = 'probe'
+        else:
+            fn = 'probe_{}'.format(ss)
+
     csc_files = task['filenames']
     sp = Path(task['sp'])
     ss = task['subSessionID']
 
-    if ss=='0000':
-        ttFile = 'tt_{}'.format(tt_id)
-    else:
-        ttFile = 'tt_{}_{}'.format(tt_id,ss)
-
-    if not (sp / (ttFile + '.' + save_format)).exists() or overwriteFlag :
+    if not (sp / (fn + '.' + save_format)).exists() or overwriteFlag :
         # Filter Parameters (must excist in the same directory)
         try:
             b = np.fromfile('filt_b.dat',dtype='float',sep=',')
@@ -86,6 +88,7 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
         date_obj = datetime.date.today()
         date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
 
+        nChannels = len(csc_files)
         # load first channel
         f =[]
         f.append(csc_files[0])
@@ -101,14 +104,22 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
         del time_stamps
 
         # create information file
-        info  = {'tetrodeID':[tt_id],'RefChan':h1['RefChan'],
+        info  = {'RefChan':h1['RefChan'],
         'fs':h1['fs'],'AmpPercentileThr':AmpPercentileThr,'nSamps':nSamps,
         'date_processed': date_str, 'subSessionID':ss}
+        info['AD']=[]
+        info['InputRange']=[]
+        info['AmpRejThr']=[]
+        info['date_created']=[]
+        info['sig_stats']=[]
+        info['fsig_stats']=[]
+        info['nBadAmpSamps']=[]
+        info['nAvgBadSamps']=[]
 
-        data = np.zeros((nSamps,4),dtype=np.float32)
+        data = np.zeros((nSamps,nChannels),dtype=np.float32)
         cnt =0
-        for chan_id in np.arange(0,4):
-            print("\nProcessing Tetrode {} Channel {}".format(tt_id,chan_id))
+        for chan_id in np.arange(nChannels):
+            print("\nProcessing Channel {}".format(chan_id))
             # load channel data
             if chan_id>0:
                 f.append(csc_files[chan_id])
@@ -119,17 +130,17 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
 
             # get channel specific info
             h2  = get_header(f[chan_id])
-            info['AD'+'_'+chan_id_str]="{0:0.3e}".format(float(h2['AD']))
-            info['InputRange'+'_'+chan_id_str]=h2['InputRange']
-            info['AmpRejThr'+'_'+chan_id_str] = h2['InputRange']*AmpPercentileThr
-            info['date_created'+'_'+chan_id_str]=get_file_date(f[chan_id])
-            info['sig_stats_'+chan_id_str] = sig_stats(sig)
+            info['AD'].append("{0:0.3e}".format(float(h2['AD'])))
+            info['InputRange'].append(h2['InputRange'])
+            info['AmpRejThr'].append(h2['InputRange']*AmpPercentileThr)
+            info['date_created'].append(get_file_date(f[chan_id]))
+            info['sig_stats'].append(sig_stats(sig))
             rejThr= h2['InputRange']*AmpPercentileThr
 
             ## Step 1. Filter.
             t1=time.time()
             fsig = FilterCSC(sig,b,a)
-            info['fsig_stats_'+chan_id_str] = sig_stats(fsig)
+            info['fsig_stats'].append(sig_stats(fsig))
             t2=time.time()
             print("Time to filter the signal %0.2f" % (t2-t1))
 
@@ -148,22 +159,22 @@ def get_process_save_tetrode(task, save_format='bin', AmpPercentileThr=0.975, ov
             print("Total time to preprocess the signal %0.2f" % (t4-t1))
 
             data[:,cnt]=fsig
-            info['nBadAmpSamps_'+chan_id_str]=nBadSamps
-            info['nAvgBadSamps_'+chan_id_str]="{0:0.3e}".format(nBadSamps/nSamps)
+            info['nBadAmpSamps'].append(nBadSamps)
+            info['nAvgBadSamps'].append("{0:0.3e}".format(nBadSamps/nSamps))
 
             cnt=cnt+1
-            print('Processing TT {} Channel {} completed.\n'.format(tt_id,chan_id))
+            print('Processing of Channel {} completed.\n'.format(chan_id))
 
         if save_format=='bin':
             int16NormFactor = getInt16ConvFactor(data)
             info['Int_16_Norm_Factors'] = int16NormFactor.tolist()
-            save_tetrode(data,sp,ttFile,save_format,int16NormFactor)
+            save_probe(data,sp,fn,save_format,int16NormFactor)
         else:
-            save_tetrode(data,sp,ttFile,save_format)
-        save_tetrode_info(info,ttFile,sp)
+            save_probe(data,sp,fn,save_format)
+
+        save_info(info,fn,sp)
     else:
         print('File exists and overwrite = false ')
-
 def get_save_events(task,overwriteFlag=0):
     try:
         raw_ev_file = task['filenames']
@@ -194,11 +205,12 @@ def get_save_tracking(task,overwriteFlag=0):
         vt_file = 'vt_{}.h5'.format(ss)
 
     if not (sp / vt_file).exists() or overwriteFlag :
-        t,x,y = get_position(raw_vt_file)
+        t,x,y,ha = get_position(raw_vt_file)
         with h5py.File(str(sp / vt_file), 'w') as hf:
             hf.create_dataset("t",  data=t)
             hf.create_dataset("x",  data=x)
             hf.create_dataset("y",  data=y)
+            hf.create_dataset("ha",  data=ha)
     else:
         print('File exists and overwrite = false ')
 
@@ -208,33 +220,33 @@ def get_save_tracking(task,overwriteFlag=0):
 ################################################################################
 ################################################################################
 
-def save_tetrode(tetrode,save_path,ttFile,save_format,int16NormFactor=1):
+def save_probe(data,save_path,fn,save_format,int16NormFactor=1):
     if save_format=='h5': # h5 format
-        with h5py.File(str(save_path / (ttFile + '.' + save_format)), 'w') as hf:
-            hf.create_dataset("tetrode",  data=tetrode)
+        with h5py.File(str(save_path / (fn + '.' + save_format)), 'w') as hf:
+            hf.create_dataset("tetrode",  data=data)
     elif save_format=='npy': # numpy
-        np.save(str(save_path / (ttFile + '.' + save_format)),tetrode)
+        np.save(str(save_path / (fn + '.' + save_format)),data)
     elif save_format=='csv': # comma separeted values
-        np.savetxt(str(save_path / (ttFile + '.' + save_format)),tetrode,delimiter=',')
+        np.savetxt(str(save_path / (fn + '.' + save_format)),data,delimiter=',')
     elif save_format=='bin': # binary
-        data=data2int16(tetrode,int16NormFactor)
-        data.tofile(str(save_path / (ttFile + '.' + save_format)))
+        data=data2int16(data,int16NormFactor)
+        data.tofile(str(save_path / (fn + '.' + save_format)))
     else:
         print('Unsuported save method specified {}, saving as .npy array.'.format(save_format))
-        np.save(str(save_path / (ttFile + '.' + save_format)),tetrode)
+        np.save(str(save_path / (fn + '.' + save_format)),data)
 
-    print('Tetrode {} results saved to {}'.format(ttFile, str(save_path)))
+    print('{}: results saved to {}'.format(fn, str(save_path)))
     print('')
 
-def save_tetrode_info(header,ttFile,save_path):
+def save_info(header,fn,save_path):
     try:
-        with open(str(save_path/('header_'+ttFile+'.json')), 'w') as f:
+        with open(str(save_path/('header_'+fn+'.json')), 'w') as f:
             json.dump(header, f ,indent=4)
     except:
         print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
         print(header)
 
-def save_timestamps(stamps, save_path, save_format):
+def save_timestamps(stamps, save_path, save_format ='npy'):
     if save_format=='h5':
         with h5py.File(str(save_path / 'time_stamps')+'.h5', 'w') as hf:
             hf.create_dataset("time_stamps",  data=stamps)

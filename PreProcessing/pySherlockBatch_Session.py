@@ -61,8 +61,8 @@ if 1:
             task_type = task['type']
             if task_type=='tt':
                 print("Processing Tetrode # {}, subSessionID={}".format(task['tt_id'],task['subSessionID']))
-                from pre_process_neuralynx import get_process_save_tetrode
-                get_process_save_tetrode(task,overwriteFlag=overwriteFlag)
+                from pre_process_neuralynx import get_process_save_probe
+                get_process_save_probe(task,overwriteFlag=overwriteFlag)
             elif task_type == 'ev':
                 print("Processing Events, subSessionID={}".format(task['subSessionID']))
                 from pre_process_neuralynx import get_save_events
@@ -81,7 +81,7 @@ if 1:
         except:
             print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
             print ("Unable to process task {} of {}".format(taskID,taskFile))
-            #sys.exit('Error processing task {} of {}'.format(taskID,taskFile))            
+            #sys.exit('Error processing task {} of {}'.format(taskID,taskFile))
 
 try:
     table_c[taskIDstr] = 1
