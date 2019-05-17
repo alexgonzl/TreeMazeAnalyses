@@ -114,7 +114,7 @@ if __name__ == '__main__':
                         print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
                         continue
                 if not chAbsentFlag:
-                    Files[taskID] = dict_entry('Probe',Probe,sp,subSessionID=str(ss).zfill(4))
+                    Files[taskID] = dict_entry('probe',Probe,sp,subSessionID=str(ss).zfill(4))
                     taskID+=1
 
             # valid vt

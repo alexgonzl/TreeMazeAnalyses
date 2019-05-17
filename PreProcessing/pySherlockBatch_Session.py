@@ -63,6 +63,11 @@ if 1:
                 print("Processing Tetrode # {}, subSessionID={}".format(task['tt_id'],task['subSessionID']))
                 from pre_process_neuralynx import get_process_save_probe
                 get_process_save_probe(task,overwriteFlag=overwriteFlag)
+            elif task_type=='probe':
+                print("Processing Probe, subSessionID={}".format(task['subSessionID']))
+                from pre_process_neuralynx import get_process_save_probe
+                get_process_save_probe(task,overwriteFlag=overwriteFlag)
+
             elif task_type == 'ev':
                 print("Processing Events, subSessionID={}".format(task['subSessionID']))
                 from pre_process_neuralynx import get_save_events
