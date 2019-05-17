@@ -42,4 +42,7 @@ def bin_spikes(spikes,orig_time,time_vector):
     cnt = 0
     for tt, cl_ids in spikes:
         for cl in cl_ids:
+            sp_ids[cnt] = (tt,cl)
             sp_bins[cnt] = np.histogram(orig_time[spikes[tt][cl]],bins=nTimePoints)
+
+    return sp_bins,sp_ids
