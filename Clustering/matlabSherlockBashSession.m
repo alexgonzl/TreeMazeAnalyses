@@ -23,14 +23,20 @@ for f =1:nFiles
     sp = fInfo.sp;
 
     if ~exist(fullfile(sp,'rez.mat')) | overwriteFlag
-      if strcmp(type,'KiloSortCluster')
-        KiloSort_Master(fn,hfn,sp);
+      if strcmp(type,'KiloSortTTCluster')
+        KiloSort_Master(fn,hfn,sp,'tt');
+      else if strcmp(type,'KiloSortNR32Cluster')
+        KiloSort_Master(fn,hfn,sp,'NR32');
       end
       fprintf('Clustering Completed for %i\n\n',f);
     else
       fprintf('Cluster File %i Exists and Overwrite = False.\n\n',f);
     end
-    fn_s = strcat('tt_',str(f),'.bin')
+    if strcmp(type,'KiloSortTTCluster')
+      fn_s = strcat('tt_',str(f),'.bin')
+    else
+      fn_s = strcat('probe.bin')
+    end
     if ~exists(fullfile(sp,fn_s))
       copyfile(fn,sp)
     end

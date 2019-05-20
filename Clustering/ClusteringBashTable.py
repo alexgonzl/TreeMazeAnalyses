@@ -15,19 +15,30 @@ if __name__ == '__main__':
     volumePath=''
     ID = ''
     minFileSize = 16384
+    TetrodeRecording = 1
+    nTetrodes = 16
 
     if len(sys.argv)<4:
         print("Usage: %s -a ID -v 'Volume/path/to/folders' -p " % sys.argv[0])
         sys.exit('Invalid input.')
 
     print(sys.argv[1:])
-    myopts, args = getopt.getopt(sys.argv[1:],"a:v:")
+    myopts, args = getopt.getopt(sys.argv[1:],"a:v:p:")
     for o, a in myopts:
         print(o,a)
         if o == '-v':
             volumePath = Path(str(a))
         elif o=='-a':
             ID = str(a)
+        elif o == '-p':
+            if str(a)=='NR32':
+                TetrodeRecording = 0
+                nChannels = 32
+            elif str(a)=='TT16':
+                TetrodeRecording = 1
+                nTetrodes=16
+            else:
+                sys.exit('Invalid Probe Type.')
         else:
             print("Usage: %s -a ID -v 'Volume/path/to/folders'" % sys.argv[0])
             sys.exit('Invalid input. Aborting.')
@@ -44,16 +55,26 @@ if __name__ == '__main__':
         SessionCnt+=1
         print('Collecting Info for Session # {}, {}'.format(SessionCnt, session.name))
         Files = {}
-        taskID = 1 
+        taskID = 1
         try:
-            for tt in np.arange(1,17):
-                file = 'tt_' + str(tt) + '.bin'
-                sp = Path(str(session).strip('_Results')+'_KSClusters/tt_'+str(tt))
+            if TetrodeRecording:
+                for tt in np.arange(1,nTetrodes+1):
+                    file = 'tt_' + str(tt) + '.bin'
+                    sp = Path(str(session).strip('_Results')+'_KSClusters/tt_'+str(tt))
+                    sp.mkdir(parents=True,exist_ok=True)
+                    if (session / file).exists():
+                        hfile = 'header_tt_' + str(tt)+'.json'
+                        Files[taskID] = dict_entry('KiloSortTTCluster',str(session / file),str(session / hfile),sp)
+                        taskID+=1
+            else:
+                file = 'probe.bin'
+                sp = Path(str(session).strip('_Results')+'_KSClusters/')
                 sp.mkdir(parents=True,exist_ok=True)
                 if (session / file).exists():
-                    hfile = 'header_tt_' + str(tt)+'.json'
-                    Files[taskID] = dict_entry('KiloSortCluster',str(session / file),str(session / hfile),sp)
+                    hfile = 'header_probe.json'
+                    Files[taskID] = dict_entry('KiloSortNR32Cluster',str(session / file),str(session / hfile),sp)
                     taskID+=1
+                    
             if len(Files)>0:
                 Sessions[SessionCnt] = session_entry(session,Files,session)
             else:

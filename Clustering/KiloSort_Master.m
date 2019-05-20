@@ -1,4 +1,4 @@
-function KiloSort_Master(fn,hfn,sp)
+function KiloSort_Master(fn,hfn,sp,ftype)
 % default options are in parenthesis after the comment
 
 kilopath = '../Lib/KiloSort/';
@@ -8,14 +8,14 @@ addpath(genpath(npy_mat)) % path to npy-matlab scripts
 
 %pathToYourConfigFile = './'; % take from Github folder and put it somewhere else (together with the master_file)
 %run(fullfile(pathToYourConfigFile, 'KiloSort_Config.m')) % change into function that can take input files.
-ops = KiloSort_Config(fn,hfn,sp);
+ops = KiloSort_Config(fn,hfn,sp,ftype);
 
 disp('')
 disp(strcat('Processing File', fn))
 if (~exist(fullfile(sp,'rez.mat')) || ops.Overwrite)
     tic; % start timer
     %
-    if ops.GPU     
+    if ops.GPU
         gpuDevice(1); % initialize GPU (will erase any existing GPU arrays)
     end
 
