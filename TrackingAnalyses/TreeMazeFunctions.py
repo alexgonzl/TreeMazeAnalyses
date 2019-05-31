@@ -7,18 +7,33 @@ import h5py
 
 sys.path.append('../PreProcessing/')
 sys.path.append('../Lib/')
+sys.path.append('../Analyses/')
+import spatial_tuning as ST
+import stats_functions as StF
 from pre_process_neuralynx import *
 from filters_ag import *
 import nept
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from shapely.geometry import Point
 from shapely.geometry.polygon import LinearRing, Polygon
 from collections import Counter
 from descartes import PolygonPatch
 
+font = {'family' : 'sans-serif',
+        'size'   : 20}
+
+plt.rc('font', **font)
+
 ################################################################################
 # Constants
 ################################################################################
+# y limits in mm space
+y_limit = [-100,1500]
+x_limit = [-1000,1000]
+
 nWells = 6
 EventNames  = ['RH','RC','R1','R2','R3','R4','RG','AR','DH','DC','D1','D2','D3','D4',
              'LH','LC','L1','L2','L3','L4','CL','CR','TrID','cTr','iTr','LDs','RDs']
@@ -26,9 +41,10 @@ nEventTypes = len(EventNames) # total number of events
 # note that here I change the names from the original event names. wells 1 and 2
 # are now referred to as Home and Center.
 
-i=['Seg'+s+'i' for s in ['A','B','C','D','E','F','G']]
-o=['Seg'+s+'o' for s in ['A','B','C','D','E','F','G']]
-SegDirNames = i+o
+Segs = ['Seg'+s for s in ['A','B','C','D','E','F','G']]
+InSeg= [s+'i' for s in Segs]
+OutSeg=[s+'o' for s in Segs]
+SegDirNames = InSeg+OutSeg
 ZonesNames  = ['Home','SegA','Center','SegB','I1','SegC','G1',
             'SegD','G2','SegE','I2','SegF','G3', 'SegG','G4']
 nZones = len(ZonesNames)
@@ -49,29 +65,74 @@ MazeZonesCoords ={'Home':[(-300, -80), (-300, 80),(300,80),(300, -80)],
                              (-75,550),(0,600),(75,550),(150,660),(150,400),
                              (95,400),(80,500)],
                   'SegA': [(-150,80),(-80,500),(80,500),(150,80)],
-                  'SegE': [(0,600),(0,700),(200,1000),(320,900),(75, 550)],
-                  'SegG': [(340,1060),(550,1280),(550,800),(320,900)],
-                  'SegF': [(200,1000),(50,1230),(550,1280),(340,1060)],
-                  'SegB': [(0,600),(0,700),(-200,1000),(-330,900),(-75, 550)],
-                  'SegD': [(-200,1000),(-50,1230),(-620,1280),(-360,1060)],
-                  'SegC': [(-360,1060),(-620,1280),(-620,800),(-330,900)],
+                  'SegB': [(0,600),(0,700),(200,1000),(330,900),(75, 550)],
+                  'SegC': [(360,1060),(610,1280),(610,800),(330,900)],
+                  'SegD': [(200,1000),(50,1230),(610,1280),(360,1060)],
+                  'SegE': [(0,600),(0,700),(-200,1000),(-330,900),(-75, 550)],
+                  'SegF': [(-200,1000),(-50,1230),(-610,1280),(-360,1060)],
+                  'SegG': [(-360,1060),(-610,1280),(-610,800),(-330,900)],
 
-                  'G4': [(550,1280),(750,1200),(750,800),(550,800)],
-                  'G3': [(50,1230),(50,1450),(400,1450),(550,1280)],
-                  'G2': [(-50,1230),(-50,1450),(-400,1450),(-620,1280)],
-                  'G1': [(-620,1280),(-800,1200),(-800,800),(-620,800)],
+                  # 'G1': [(550,1280),(750,1200),(750,800),(550,800)],
+                  # 'G2': [(50,1230),(50,1450),(400,1450),(550,1280)],
+                  # 'G3': [(-50,1230),(-50,1450),(-400,1450),(-620,1280)],
+                  # 'G4': [(-620,1280),(-800,1200),(-800,800),(-620,800)],
+                  'G1':[(610,1280),(800,1200),(800,800),(610,800)],
+                  'G2': [(50,1230),(50,1450),(400,1450),(610,1280)],
+                  'G3': [(-50,1230),(-50,1450),(-400,1450),(-610,1280)],
+                  'G4': [(-610,1280),(-800,1200),(-800,800),(-610,800)],
 
-                  'I2': [(200,1000),(340,1060),(320,900)],
-                  'I1': [(-330,900),(-360,1060),(-200,1000)],
+                  'I1': [(200,1000),(360,1060),(330,900)],
+                  'I2': [(-330,900),(-360,1060),(-200,1000)],
                  }
 MazeZonesGeom = {}
 
 for zo in ZonesNames:
    MazeZonesGeom[zo] = Polygon(MazeZonesCoords[zo])
 
+
+# filtering params
+med_filt_window = 21 # in samples  21samps/60samps/s = 350ms
+smooth_filt_window = 15 # in samples 15/6 = 250ms
+filtCoeff = signal.firwin(smooth_filt_window, cutoff = 0.2, window = "hanning")
+
 ################################################################################
 # Main Functions: get
 ################################################################################
+def getBehTrackData(sessionPaths, overwrite):
+    if (not sessionPaths['BehavTrackDat'].exists()) | overwrite:
+        print('Computing Position Data.')
+        posPath = Path(sessionPaths['Raw'],'VT1.nvt')
+        t,x,y,ha = load_nvt2(posPath)
+        PosDat = getPositionMat(x,y,t,sessionPaths['step'])
+
+        print('Computing Event Data.')
+        evPath = Path(sessionPaths['Raw'],'Events.nev')
+        ev = get_events(evPath)
+        EventDat = getEventMatrix(ev,PosDat['t'])
+
+        PosDat['EventDat'] = EventDat
+        with h5py.File(sessionPaths['BehavTrackDat'], 'w') as f:
+            for k,v in PosDat.items():
+                f.create_dataset(k,data=v)
+        print('Behavioral Tracking Variables Computed and Saved.')
+
+    else:
+        print('Loading Beh Tracking Data')
+        PosDat = {}
+        with h5py.File(sessionPaths['BehavTrackDat'], 'r') as f:
+            for k in f.keys():
+                if k=='PosMat':
+                    PosDat[k]=pd.DataFrame(f.get(k)[()],columns=ZonesNames)
+                elif k=='SegDirMat':
+                    PosDat[k]=pd.DataFrame(f.get(k)[()],columns=SegDirNames)
+                elif k=='EventDat':
+                    PosDat[k]=pd.DataFrame(f.get(k)[()],columns=EventNames)
+                else:
+                    PosDat[k]=f.get(k)[()]
+        print('Complete.')
+
+    return PosDat
+
 def getPositionMat(x,y,t,step):
     '''
     Main Wrapper Function to obtain the animals position in the maze as defined
@@ -112,7 +173,7 @@ def getPositionMat(x,y,t,step):
     PosDat['x'] = xs
     PosDat['y'] = ys
     PosDat['t'] = tp
-
+    PosDat['step'] = step
     # get maze positions
     PosZones = getMazeZones(xs,ys)
     t4=time.time()
@@ -121,7 +182,7 @@ def getPositionMat(x,y,t,step):
     PosDat['PosZones'] = PosZones
     # get position matrix
     PosMat = PosZones2Mat(PosZones)
-    PosMat = pd.DataFrame(data=PosMat,columns=ZonesNames)
+    PosDat['PosMat'] = pd.DataFrame(data=PosMat,columns=ZonesNames)
     t4=time.time()
     print('Creating Position Matrix Completed : {0:.2f} s'.format(t4-t3))
 
@@ -132,6 +193,18 @@ def getPositionMat(x,y,t,step):
     print('Processing of Position Data Complete : {0:.2f} s'.format(t5-t1))
 
     PosDat['SegDirMat'] = SegDirMat
+    PosDat['SegDirSeq'] = np.zeros(len(tp))
+    cnt=1
+    for seg in SegDirNames:
+        PosDat['SegDirSeq']+=PosDat['SegDirMat'][seg]*cnt
+        cnt+=1
+    PosDat['InSeg'] = np.sum(SegDirMat[InSeg].values,1).astype(bool)
+    PosDat['OutSeg'] = np.sum(SegDirMat[OutSeg].values,1).astype(bool)
+
+    PosDat['tB'] = t[0]
+    PosDat['tE'] = t[-1]
+
+    PosDat['Speed'], PosDat['HeadingAng'] = getVelocity(xs,ys,step)
     return PosDat
 
 def getEventMatrix(events,tp):
@@ -206,11 +279,12 @@ def getEventMatrix(events,tp):
     EventMat['LDs'] = makeEventVector(TrialEvents['LDs'],TrialEvents['LDur'],tp)
     EventMat['RDs'] = makeEventVector(TrialEvents['RDs'],TrialEvents['RDur'],tp)
     EventMat=EventMat.astype(int)
-    return tp,EventMat
+    return EventMat
 
 ################################################################################
 # Auxiliary Functions for creating Position Matrix
 ################################################################################
+
 
 def RotateXY(x,y,angle):
     x2 = x*np.cos(angle)+y*np.sin(angle)
@@ -223,10 +297,6 @@ def ScaleRotateSmoothTrackDat(x,y):
     # rotation angle for the maze (for original pixel space)
     rot_ang=np.pi/2+0.05
 
-    # y limits in mm space
-    y_limit = [-100,1500]
-    x_limit = [-1000,1000]
-
     # parameters for translation and scaling
     x_translate = -255
     y_translate = 550
@@ -237,22 +307,20 @@ def ScaleRotateSmoothTrackDat(x,y):
     # speed thr
     spd_thr = 50 # mm/frame -> mm/frame*60frames/s*1cm/10mm = 50*6 cm/s
 
-    # filtering params
-    med_filt_window = 21 # in samples  21samps/60samps/s = 350ms
-    smooth_filt_window = 15 # in samples 15/6 = 250ms
-
     ######## Operations ########
     # rotate
     x,y=RotateXY(x,y,rot_ang)
 
     # re-scale
-    x = (x+x_translate)*x_pix2mm
+    x = -(x+x_translate)*x_pix2mm
+    x[x<0]=x[x<0]*1.1 # left warping
     y = (y+y_translate)*y_pix2mm
 
     # compute velocity to create speed threshold
-    r=np.append(0,np.sqrt(x**2+y**2))
-    rd=np.diff(r)
-    mask_r = np.abs(rd)>spd_thr
+    dx = np.append(0,np.diff(x))
+    dy = np.append(0,np.diff(y))
+    dr = np.sqrt(dx**2+dy**2)
+    mask_r = np.abs(dr)>spd_thr
 
     # mask creating out of bound zones
     mask_y = np.logical_or(y<y_limit[0],y>y_limit[1])
@@ -271,17 +339,25 @@ def ScaleRotateSmoothTrackDat(x,y):
     y = medFiltFilt(y,med_filt_window)
 
     # if there are still NaNs assign id to previous value
-    badIds = np.where(np.logical_or(np.isnan(x), np.isnan(y)))
+    badIds = np.where(np.logical_or(np.isnan(x), np.isnan(y)))[0]
     for ii in badIds:
-        x[ii] = x[ii-1]
-        y[ii] = y[ii-1]
+        x[ii] = getLastNotNanVal(x,ii)
+        y[ii] = getLastNotNanVal(y,ii)
 
     # filter / spatial smoothing
     b = signal.firwin(smooth_filt_window, cutoff = 0.2, window = "hanning")
-    x = signal.filtfilt(b,1,x)
-    y = signal.filtfilt(b,1,y)
+    x = signal.filtfilt(filtCoeff,1,x)
+    y = signal.filtfilt(filtCoeff,1,y)
 
     return x,y
+
+def getLastNotNanVal(x,i):
+    if i==0:
+        return 0
+    elif np.isnan(x[i]):
+        return getLastNotNanVal(x,i-1)
+    else:
+        return x[i]
 
 def getMazeZones(x,y):
     # Get zones that contains each x,y point
@@ -390,6 +466,25 @@ def getSegmentDirs(PosZones,t):
             dur = SegDirID[i][1]
             SegDirMat[segID][mark:(mark+dur)]=1
     return SegDirMat
+
+def atan2v(dy,dx):
+    N = len(dy)
+    out = np.zeros(N)
+    for i in np.arange(N):
+        out[i] = np.math.atan2(dy[i],dx[i])
+    return out
+
+def getVelocity(x,y,step):
+    dx = np.append(0,np.diff(x))
+    dy = np.append(0,np.diff(y))
+
+    dx = signal.filtfilt(filtCoeff,1,dx)
+    dy = signal.filtfilt(filtCoeff,1,dy)
+    dr = np.sqrt(dx**2+dy**2)
+
+    sp = dr/step # convert distance to speed
+    an = atan2v(dy,dx)
+    return sp,an
 
 ################################################################################
 # Auxiliary Functions for creating Event Matrix
@@ -645,13 +740,3 @@ def getLEDDurations(ev,step):
                 else:
                     LED_Durs[L_ID][eID] = defDur
     return LED_Durs
-
-################################################################################
-# Plot Functions
-################################################################################
-def plotPoly(poly,ax,alpha=0.3,color='g'):
-    p1x,p1y = poly.exterior.xy
-    ax.plot(p1x, p1y, color='k', alpha=alpha,
-        linewidth=3,)
-    ring_patch = PolygonPatch(poly, fc=color, ec='none', alpha=alpha)
-    ax.add_patch(ring_patch)
