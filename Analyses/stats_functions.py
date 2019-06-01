@@ -4,7 +4,13 @@ import seaborn as sns
 from matplotlib.offsetbox import AnchoredText
 import statsmodels.stats.api as sms
 import scipy.stats as sps
-
+import sys
+sys.path.append('../PreProcessing/')
+sys.path.append('../TrackingAnalyses/')
+sys.path.append('../Lib/')
+sys.path.append('../misc/')
+sys.path.append('../Analyses/')
+import TreeMazeFunctions as TMF
 
 def spatial_information(loc_prob, fr_map):
     meanFR = np.nanmean(fr_map)
@@ -22,7 +28,21 @@ def BiPermTest(func, x, y, n=1000,seed=0):
         x2 = np.random.permutation(x)
         out[i] = func(x2,y)
     return out
-
+def SI_Zone_Perm(ZoneInfo,zones, fr ,n=1000,seed=0):
+    si_sh = np.zeros(n)
+    np.random.seed(seed)
+    zfr = np.bincount(zones,fr,minlength=TMF.nZones)/ZoneInfo.loc['counts']
+    si = spatial_information(ZoneInfo.loc['prob'],zfr)
+    for i in np.arange(n):
+        x2 = np.random.permutation(zones)
+        zfr_sh = np.bincount(x2,fr,minlength=TMF.nZones)/ZoneInfo.loc['counts']
+        si_sh[i] = spatial_information(ZoneInfo.loc['prob'],zfr_sh)
+    p = 1-np.sum(si>si_sh)/n
+    if p==0:
+        p = 1/(n+1)
+    elif p==1:
+        p=1-1/(n+1)
+    return si,si_sh,p
 def SIPermTest(x,y,n=1000,seed=0):
     z = spatial_information(x,y)
     out = BiPermTest(spatial_information,x,y,n,seed)

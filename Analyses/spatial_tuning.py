@@ -5,7 +5,7 @@ from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.ticker import FormatStrFormatter
-import matplotlib as mpl
+
 import seaborn as sns
 
 from pathlib import Path
@@ -65,7 +65,7 @@ def getZoneSpikeMaps(sp,Zones):
 
 def getPosBinSpikeMaps(spikes,PosDat,spacing=25):
     xSp,ySp = binSpikesToXY(spikes,PosDat['x'],PosDat['y'])
-    spikes_pos,_,_=get_position_mat(xSp,ySp,TMF.x_limit,TMF.y_limit,spacing)
+    spikes_pos,_,_=getPositionMat(xSp,ySp,TMF.x_limit,TMF.y_limit,spacing)
     return spikes_pos
 
 def getPosBinFRMaps(spikes_pos,occ_time):

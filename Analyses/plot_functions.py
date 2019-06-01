@@ -16,6 +16,8 @@ import nept
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib as mpl
+
 from shapely.geometry import Point
 from shapely.geometry.polygon import LinearRing, Polygon
 from collections import Counter
@@ -97,13 +99,21 @@ def plotTM_Trace(ax,x,y,bin_spikes=[], plot_zones=1, plot_raw_traces=0):
 
     return ax
 
-def plotZonesHeatMap(ax,cax,data,zones=TMF.ZonesNames,cmap='div',alpha=1):
-    if cmap=='div':
-        cDat,colArray =  getDatColorMap(data)
-        cMap = plt.get_cmap('RdBu_r')
+def plotZonesHeatMap(ax,cax,data,zones=TMF.ZonesNames,cmap='div',alpha=1,colArray=[]):
+    if len(colArray)==0:
+        if cmap=='div':
+            cDat,colArray =  getDatColorMap(data)
+            cMap = plt.get_cmap('RdBu_r')
+        else:
+            cDat,colArray =  getDatColorMap(data,col_palette='YlOrBr_r',div=False)
+            cMap = plt.get_cmap('YlOrBr_r')
     else:
-        cDat,colArray =  getDatColorMap(data,col_palette='YlOrBr_r',div=False)
-        cMap = plt.get_cmap('YlOrBr_r')
+        if cmap=='div':
+            cDat,_ =  getDatColorMap(data,colArray=colArray)
+            cMap = plt.get_cmap('RdBu_r')
+        else:
+            cDat,_ =  getDatColorMap(data,colArray=colArray,col_palette='YlOrBr_r',div=False)
+            cMap = plt.get_cmap('YlOrBr_r')
     cnt=0
     for zo in zones:
         plotPoly(TMF.MazeZonesGeom[zo],ax,color=cDat[cnt],alpha=alpha)
@@ -124,15 +134,19 @@ def plotZonesHeatMap(ax,cax,data,zones=TMF.ZonesNames,cmap='div',alpha=1):
 
     return ax,cax
 
-def getDatColorMap(data, nBins = 25, col_palette="RdBu_r",div=True):
+def getDatColorMap(data, nBins = 25, col_palette="RdBu_r",div=True,colArray=[]):
 
-    if div:
-        maxV = np.ceil(np.max(np.abs(data))*100)/100
-        colArray = np.linspace(-maxV,maxV,nBins-1)
+    if len(colArray)>0:
+        nBins = len(colArray)
     else:
-        maxV = np.ceil(np.max(data)*100)/100
-        minV = np.ceil(np.min(data)*100)/100
-        colArray = np.linspace(minV,maxV,nBins-1)
+        if div:
+            maxV = np.ceil(np.max(np.abs(data))*100)/100
+            colArray = np.linspace(-maxV,maxV,nBins-1)
+        else:
+            maxV = np.ceil(np.max(data)*100)/100
+            minV = np.ceil(np.min(data)*100)/100
+            colArray = np.linspace(minV,maxV,nBins-1)
+
     x = np.digitize(data,colArray).astype(int)
     colMap = np.array(sns.color_palette(col_palette, nBins))
     return colMap[x],colArray
