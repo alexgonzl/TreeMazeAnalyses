@@ -45,14 +45,14 @@ def getSessionSpikes(sessionPaths, overwrite=0):
 
     return cell_spikes, mua_spikes
 
-def getSessionBinSpikes(sessionPaths, overwrite=0):
+def getSessionBinSpikes(sessionPaths,resamp_t, overwrite=0):
     if (not sessionPaths['Cell_Bin_Spikes'].exists()) | overwrite:
         print('Binned Spikes Files not Found, creating them.')
 
         cell_spikes, mua_spikes = getSessionSpikes(sessionPaths, overwrite)
 
-        cell_bin_spikes,cell_ids = SF.bin_TT_spikes(cell_spikes,orig_time,t)
-        mua_bin_spikes,mua_ids = SF.bin_TT_spikes(mua_spikes,orig_time,t)
+        cell_bin_spikes,cell_ids = bin_TT_spikes(cell_spikes,resamp_t,origSR=sessionPaths['SR'])
+        mua_bin_spikes,mua_ids = bin_TT_spikes(mua_spikes,resamp_t,origSR=sessionPaths['SR'])
 
         ids = {}
         ids['cells'] = cell_ids
@@ -119,22 +119,28 @@ def get_TT_spikes(IDs,cluster_path):
                 spikes[str(tt_id)][str(cl)]=sp_times[clusters==cl].tolist()
     return spikes
 
-def bin_TT_spikes(spikes,orig_time,time_vector):
-    step = time_vector[1]-time_vector[0]
+def bin_TT_spikes(spikes,resamp_t,origSR=32000):
+    orig_time = np.arange(resamp_t[0],resamp_t[-1],1/origSR)
+    step = resamp_t[1]-resamp_t[0]
     nOrigTimePoints = len(orig_time)
-    nTimePoints = len(time_vector)
+    nTimePoints = len(resamp_t)
     sp_bins = np.zeros((spikes['nUnits'],nTimePoints))
     sp_ids = {}
     cnt = 0
     for tt,cl_ids in spikes.items():
         if tt!='nUnits':
             for cl in cl_ids:
-                sp = np.array(spikes[tt][cl])
-                out_of_record_spikes = sp>=nOrigTimePoints
-                if np.any(out_of_record_spikes):
-                    sp = np.delete(sp,np.where(out_of_record_spikes)[0])
-                sp_ids[cnt] = (tt,cl)
-                sp_bins[cnt],_ = np.histogram(orig_time[sp],bins=nTimePoints)
+                try:
+                    sp = np.array(spikes[tt][cl])
+                    out_of_record_spikes = sp>=nOrigTimePoints
+                    if np.any(out_of_record_spikes):
+                        sp = np.delete(sp,np.where(out_of_record_spikes)[0])
+                    sp_ids[cnt] = (tt,cl)
+                    #print(type(sp[0]))
+                    sp_bins[cnt],_ = np.histogram(orig_time[sp],bins=nTimePoints)
+                except:
+                    print("Error processing Tetrode {}, Cluster {}".format(tt,cl))
+                    pass
                 cnt+=1
 
     return sp_bins,sp_ids

@@ -210,7 +210,7 @@ def UpdateClusterInfo(oakPath, animal, localPath):
         cl_summary = {}
         cl_summary[animal] ={}
         cl_summary['Sessions'] = {}
-    for session in oakPath.glob('*_KSClusters'):
+    for session in localPath.glob('*_KSClusters'):
         try:
             print(session.name, cl_summary[sessions][session.name]==0)
             if cl_summary[sessions][session.name]==0 or overwrite:

@@ -52,6 +52,8 @@ nZones = len(ZonesNames)
 ReLength = 0.5 # fixed reward length [seconds]
 DeLength = 0.1 # fixed detection length [seconds]
 PostTrialDur = 1 # fixed post trial duration [seconds]
+TrialExtTimeCor = 0.3 # fixed time to extend trial post a correct trial
+TrialExtTimeInCor=0.1 # fixed time extend trial post an incorrect trial
 
 # Define Zones
 Zones = {}
@@ -66,24 +68,48 @@ MazeZonesCoords ={'Home':[(-300, -80), (-300, 80),(300,80),(300, -80)],
                              (95,400),(80,500)],
                   'SegA': [(-150,80),(-80,500),(80,500),(150,80)],
                   'SegB': [(0,600),(0,700),(200,1000),(330,900),(75, 550)],
-                  'SegC': [(360,1060),(610,1280),(610,800),(330,900)],
-                  'SegD': [(200,1000),(50,1230),(610,1280),(360,1060)],
+                  'SegC': [(610,1180),(610,800),(330,900),(490,1160)],
+                  'SegD': [(200,1000),(50,1230),(450,1230),(490,1160)],
                   'SegE': [(0,600),(0,700),(-200,1000),(-330,900),(-75, 550)],
-                  'SegF': [(-200,1000),(-50,1230),(-610,1280),(-360,1060)],
-                  'SegG': [(-360,1060),(-610,1280),(-610,800),(-330,900)],
+                  'SegF': [(-200,1000),(-50,1230),(-450,1230),(-490,1160)],
+                  'SegG': [(-610,1180),(-610,800),(-330,900),(-490,1160)],
 
                   # 'G1': [(550,1280),(750,1200),(750,800),(550,800)],
                   # 'G2': [(50,1230),(50,1450),(400,1450),(550,1280)],
                   # 'G3': [(-50,1230),(-50,1450),(-400,1450),(-620,1280)],
                   # 'G4': [(-620,1280),(-800,1200),(-800,800),(-620,800)],
-                  'G1':[(610,1280),(800,1200),(800,800),(610,800)],
-                  'G2': [(50,1230),(50,1450),(400,1450),(610,1280)],
-                  'G3': [(-50,1230),(-50,1450),(-400,1450),(-610,1280)],
-                  'G4': [(-610,1280),(-800,1200),(-800,800),(-610,800)],
+                  'G1':[(610,1180),(800,1180),(800,800),(610,800)],
+                  'G2': [(50,1230),(50,1450),(450,1450),(450,1230)],
+                  'G3': [(-50,1230),(-50,1450),(-450,1450),(-450,1230)],
+                  'G4': [(-610,1180),(-800,1180),(-800,800),(-610,800)],
 
-                  'I1': [(200,1000),(360,1060),(330,900)],
-                  'I2': [(-330,900),(-360,1060),(-200,1000)],
+                  'I1': [(200,1000),(490,1160),(330,900)],
+                  'I2': [(-330,900),(-490,1160),(-200,1000)],
                  }
+# MazeZonesCoords ={'Home':[(-300, -80), (-300, 80),(300,80),(300, -80)],
+#                   'Center': [(-80,500),(-95,400),(-150,400),(-150,655),
+#                              (-75,550),(0,600),(75,550),(150,660),(150,400),
+#                              (95,400),(80,500)],
+#                   'SegA': [(-150,80),(-80,500),(80,500),(150,80)],
+#                   'SegB': [(0,600),(0,700),(200,1000),(330,900),(75, 550)],
+#                   'SegC': [(360,1060),(610,1250),(610,800),(330,900)],
+#                   'SegD': [(200,1000),(50,1230),(610,1250),(360,1060)],
+#                   'SegE': [(0,600),(0,700),(-200,1000),(-330,900),(-75, 550)],
+#                   'SegF': [(-200,1000),(-50,1230),(-610,1250),(-360,1060)],
+#                   'SegG': [(-360,1060),(-610,1250),(-610,800),(-330,900)],
+#
+#                   # 'G1': [(550,1280),(750,1200),(750,800),(550,800)],
+#                   # 'G2': [(50,1230),(50,1450),(400,1450),(550,1280)],
+#                   # 'G3': [(-50,1230),(-50,1450),(-400,1450),(-620,1280)],
+#                   # 'G4': [(-620,1280),(-800,1200),(-800,800),(-620,800)],
+#                   'G1':[(610,1250),(800,1200),(800,800),(610,800)],
+#                   'G2': [(50,1230),(50,1450),(400,1450),(610,1250)],
+#                   'G3': [(-50,1230),(-50,1450),(-400,1450),(-610,1250)],
+#                   'G4': [(-610,1250),(-800,1200),(-800,800),(-610,800)],
+#
+#                   'I1': [(200,1000),(360,1060),(330,900)],
+#                   'I2': [(-330,900),(-360,1060),(-200,1000)],
+#                  }
 MazeZonesGeom = {}
 
 for zo in ZonesNames:
@@ -91,7 +117,7 @@ for zo in ZonesNames:
 
 
 # filtering params
-med_filt_window = 21 # in samples  21samps/60samps/s = 350ms
+med_filt_window = 15 # in samples  21samps/60samps/s = 350ms
 smooth_filt_window = 15 # in samples 15/6 = 250ms
 filtCoeff = signal.firwin(smooth_filt_window, cutoff = 0.2, window = "hanning")
 
@@ -103,14 +129,22 @@ def getBehTrackData(sessionPaths, overwrite):
         print('Computing Position Data.')
         posPath = Path(sessionPaths['Raw'],'VT1.nvt')
         t,x,y,ha = load_nvt2(posPath)
-        PosDat = getPositionMat(x,y,t,sessionPaths['step'])
+        xs,ys,ts = processXY(x,y,t,sessionPaths['step'])
 
         print('Computing Event Data.')
         evPath = Path(sessionPaths['Raw'],'Events.nev')
         ev = get_events(evPath)
-        EventDat = getEventMatrix(ev,PosDat['t'])
+        EventDat = getEventMatrix(ev,ts)
 
+        print('Comrrecting Positions with Event Info.')
+        xs,ys = correctXY(EventDat,xs,ys)
+
+        print('Creating Position Data Structure.')
+        PosDat = getPositionMat(xs,ys,ts,sessionPaths['step'])
         PosDat['EventDat'] = EventDat
+        PosDat['tB'] = t[0]
+        PosDat['tE'] = t[-1]
+
         with h5py.File(sessionPaths['BehavTrackDat'], 'w') as f:
             for k,v in PosDat.items():
                 f.create_dataset(k,data=v)
@@ -133,7 +167,7 @@ def getBehTrackData(sessionPaths, overwrite):
 
     return PosDat
 
-def getPositionMat(x,y,t,step):
+def getPositionMat(xs,ys,ts,step):
     '''
     Main Wrapper Function to obtain the animals position in the maze as defined
     by the Maze Zones. x,y,t should be as obtained from load_nvt2 in 'pre_process_neuralynx'
@@ -144,65 +178,50 @@ def getPositionMat(x,y,t,step):
         t       -> raw time arrays from Neuralynx
         step    -> scalar indicating the temporal step to sample
     Outputs:
-        tp      -> resampled time at step
-        PosMat  -> a tall/skinny binary matrix of positions, each column
-                indicates a different maze position, each row indicates time
-                such that row i occurs 'step' seconds after row i-1.
-        SegDirMat-> a matrix of in/out directions for the segment Zones
+        PosDat =
 
     Example:
         posFile = 'path/to/VT1.nvt'
         t,x,y,ha = load_nvt2(posFile)
         step = 0.02
-        tp,PosMat,SegDirMat = getEventMatrix(x,y,t,step)
+        xs,ys,ts = processXY(x,y,t,step) # resampling of data
+        PosDat = getPositionMatrix(x,y,t,step)
     '''
     # transform and smooth tracking signal @ original rate
     t1= time.time()
-    xs,ys = ScaleRotateSmoothTrackDat(x,y)
-    t2=time.time()
-    print('Smoothing track data completed: {0:0.2f} s '.format(t2-t1))
-
-    # resampling the data
-    tp, xs   = ReSampleDat(t,xs,step)
-    _, ys   = ReSampleDat(t,ys,step)
-    tp = np.round(tp*1000)/1000 #round tp to ms resolution.
-    t3=time.time()
-    print('Resampling the Data to {0} seconds completed: {1:.2f} s '.format(step,t3-t2))
 
     PosDat = {}
     PosDat['x'] = xs
     PosDat['y'] = ys
-    PosDat['t'] = tp
+    PosDat['t'] = ts
     PosDat['step'] = step
+
     # get maze positions
     PosZones = getMazeZones(xs,ys)
-    t4=time.time()
-    print('Converting Track x,y to TreeMaze Positions Completed: {0:.2f} s'.format(t4-t3))
+    t2=time.time()
+    print('Converting Track x,y to TreeMaze Positions Completed: {0:.2f} s'.format(t2-t1))
 
     PosDat['PosZones'] = PosZones
     # get position matrix
     PosMat = PosZones2Mat(PosZones)
     PosDat['PosMat'] = pd.DataFrame(data=PosMat,columns=ZonesNames)
-    t4=time.time()
-    print('Creating Position Matrix Completed : {0:.2f} s'.format(t4-t3))
+    t3=time.time()
+    print('Creating Position Matrix Completed : {0:.2f} s'.format(t3-t2))
 
     # get segment directions
-    SegDirMat = getSegmentDirs(PosZones,tp)
-    t5=time.time()
-    print('Creating Segment Direction Matrix Complete: {0:.2f} s'.format(t5-t4))
-    print('Processing of Position Data Complete : {0:.2f} s'.format(t5-t1))
+    SegDirMat = getSegmentDirs(PosZones,ts)
+    t4=time.time()
+    print('Creating Segment Direction Matrix Complete: {0:.2f} s'.format(t4-t3))
+    print('Processing of Position Data Complete : {0:.2f} s'.format(t4-t1))
 
     PosDat['SegDirMat'] = SegDirMat
-    PosDat['SegDirSeq'] = np.zeros(len(tp))
+    PosDat['SegDirSeq'] = np.zeros(len(ts))
     cnt=1
     for seg in SegDirNames:
         PosDat['SegDirSeq']+=PosDat['SegDirMat'][seg]*cnt
         cnt+=1
     PosDat['InSeg'] = np.sum(SegDirMat[InSeg].values,1).astype(bool)
     PosDat['OutSeg'] = np.sum(SegDirMat[OutSeg].values,1).astype(bool)
-
-    PosDat['tB'] = t[0]
-    PosDat['tE'] = t[-1]
 
     PosDat['Speed'], PosDat['HeadingAng'] = getVelocity(xs,ys,step)
     return PosDat
@@ -285,7 +304,6 @@ def getEventMatrix(events,tp):
 # Auxiliary Functions for creating Position Matrix
 ################################################################################
 
-
 def RotateXY(x,y,angle):
     x2 = x*np.cos(angle)+y*np.sin(angle)
     y2 = -x*np.sin(angle)+y*np.cos(angle)
@@ -345,11 +363,54 @@ def ScaleRotateSmoothTrackDat(x,y):
         y[ii] = getLastNotNanVal(y,ii)
 
     # filter / spatial smoothing
-    b = signal.firwin(smooth_filt_window, cutoff = 0.2, window = "hanning")
     x = signal.filtfilt(filtCoeff,1,x)
     y = signal.filtfilt(filtCoeff,1,y)
 
     return x,y
+
+def processXY(x,y,t,step):
+    # transform and smooth tracking signal @ original rate
+    t1= time.time()
+    xs,ys = ScaleRotateSmoothTrackDat(x,y)
+    t2=time.time()
+    print('Smoothing track data completed: {0:0.2f} s '.format(t2-t1))
+
+    # resampling the data
+    ts, xs   = ReSampleDat(t,xs,step)
+    _, ys   = ReSampleDat(t,ys,step)
+    ts = np.round(ts*1000)/1000 #round tp to ms resolution.
+    t3=time.time()
+    print('Resampling the Data to {0} seconds completed: {1:.2f} s '.format(step,t3-t2))
+
+    return xs,ys,ts
+
+def correctXY(EventDat,x,y):
+    xd = [0,0,650,250,-250,-650]
+    yd = [45,560,1000,1280,1280,1000]
+
+    x2=np.array(x)
+    y2=np.array(y)
+
+    for z1 in ['D','R']:
+        cnt=0
+        for z2 in ['H','C','1','2','3','4']:
+            z = z1+z2
+            ids = EventDat[z]==1
+            x2[ids] = xd[cnt]
+            y2[ids] = yd[cnt]
+            cnt+=1
+
+    x2 = medFiltFilt(x2,5)
+    y2 = medFiltFilt(y2,5)
+    for z1 in ['D','R']:
+        cnt=0
+        for z2 in ['H','C','1','2','3','4']:
+            ids = EventDat[z]==1
+            x2[ids] = xd[cnt]
+            y2[ids] = yd[cnt]
+            cnt+=1
+
+    return x2,y2
 
 def getLastNotNanVal(x,i):
     if i==0:
@@ -633,18 +694,19 @@ def getTrialsAndCueDurations(ev,t):
             for end_Ev in ['RW5','RW6','DE3','DE4']:
                 end_Ev_id = np.logical_and(ev[end_Ev]>=t0,ev[end_Ev]<t1)
                 if any(end_Ev_id):
-                    tE = ev[end_Ev][end_Ev_id][0]
-                    LC_Durs[nL] = tE-t0
-                    match = 1
-                    AllTrialDurs.append(tE-t0)
                     if end_Ev in ['RW5','RW6']:
+                        tE = ev[end_Ev][end_Ev_id][0]+TrialExtTimeCor
                         CorrectTrials.append(tE)
                         LeftDecision.append(t0)
                         LeftDurs.append(tE-t0)
                     else:
+                        tE = ev[end_Ev][end_Ev_id][0]+TrialExtTimeInCor
                         InCorrectTrials.append(tE)
                         RightDecision.append(t0)
                         RightDurs.append(tE-t0)
+                    LC_Durs[nL] = tE-t0
+                    match = 1
+                    AllTrialDurs.append(tE-t0)
                     break
             if match==0:
                 LC_Durs[nL] = t1-t0

@@ -104,3 +104,6 @@ def getMWUz(data,g1,g2):
     zu = (u-mu)/su
     zu2=np.sign(t)*np.abs(zu)
     return zu2, p, u
+
+def RMSE(x,y):
+    return np.sqrt(np.nanmean((x-y)**2))
