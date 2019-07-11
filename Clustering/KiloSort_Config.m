@@ -4,7 +4,6 @@ ops.GPU                 = 0; % whether to run this code on an Nvidia GPU (much f
 ops.parfor              = 0; % whether to use parfor to accelerate some parts of the algorithm
 ops.verbose             = 0; % whether to print command line progress
 ops.showfigures         = 0; % whether to plot figures during optimization
-ops.Overwrite           = 1;
 
 ops.datatype            = 'bin';  % binary ('dat', 'bin') or 'openEphys'
 ops.fbinary             = fullfile(datFile); % will be created for 'openEphys'
@@ -18,7 +17,7 @@ if strcmp(ftype,'probe')
     ops.Nfilt               = 96;           % number of clusters to use (2-4 times more than Nchan, should be a multiple of 32)
     ops.nNeighPC            = 12;           % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
     ops.nNeigh              = 16;           % visualization only (Phy): number of neighboring templates to retain projections of (16)
-		ops.chanMap             = 'NR32_ChanMap.mat'; 
+		ops.chanMap             = 'NR32_ChanMap.mat';
 else
     ops.NchanTOT            = 4;           % total number of channels (omit if already in chanMap file)
     ops.Nchan               = 4;           % number of active channels (omit if already in chanMap file)

@@ -12,29 +12,21 @@ ops = KiloSort_Config(fn,hfn,sp,ftype);
 
 disp('')
 disp(strcat('Processing File', fn))
-if (~exist(fullfile(sp,'rez.mat')) || ops.Overwrite)
-    tic; % start timer
-    %
-    if ops.GPU
-        gpuDevice(1); % initialize GPU (will erase any existing GPU arrays)
-    end
 
-    [rez, DATA, uproj] = preprocessData2(ops); % preprocess data and extract spikes for initialization
-    fprintf('Filtering Completed: %0.2f\n', toc)
-    rez                = fitTemplates(rez, DATA, uproj);  % fit templates iteratively
-    fprintf('Template Fit Completed: %0.2f\n', toc)
-    rez                = fullMPMU(rez, DATA);% extract final spike times (overlapping extraction)
-    fprintf('Spike Extraction Completed: %0.2f\n', toc)
-
-    % save matlab results file
-    save(fullfile(ops.root,  'rez.mat'), 'rez', '-v7.3');
-
-    % save python results file for Phy
-    rezToPhy(rez, ops.root);
-
-    % remove temporary file
-    delete(ops.fproc);
-    fprintf('Time to process file: %0.2f\n',toc)
-else
-    disp('File already exists and overwrite=0')
+tic; % start timer
+%
+if ops.GPU
+    gpuDevice(1); % initialize GPU (will erase any existing GPU arrays)
 end
+
+[rez, DATA, uproj] = preprocessData2(ops); % preprocess data and extract spikes for initialization
+fprintf('Filtering Completed: %0.2f\n', toc)
+rez                = fitTemplates(rez, DATA, uproj);  % fit templates iteratively
+fprintf('Template Fit Completed: %0.2f\n', toc)
+rez                = fullMPMU(rez, DATA);% extract final spike times (overlapping extraction)
+fprintf('Spike Extraction Completed: %0.2f\n', toc)
+% remove temporary file
+delete(ops.fproc);
+fprintf('Time to process file: %0.2f\n',toc)
+
+return rez

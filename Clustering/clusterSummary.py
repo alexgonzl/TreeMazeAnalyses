@@ -91,7 +91,7 @@ def CopyClustersToOak(localDir,oakDir):
                         if sp.exists():
                             # if it exists @ destination but has been change, overwrite.
                             if not filecmp.cmp(str(fn),str(sp),shallow=True):
-                                shutil.copy2(str(fn),str(sp))
+                                shutil.copy(str(fn),str(sp))
                                 updatedList.append(tt)
                                 print('{}: TT {} overwrite.'.format(session,tt))
                             else:
@@ -100,7 +100,7 @@ def CopyClustersToOak(localDir,oakDir):
                                 notUpDatedList.append(tt)
                         else:
                             # if it doesn't exist, copy
-                            shutil.copy2(str(fn),str(sp))
+                            shutil.copy(str(fn),str(sp))
                             updatedList.append(tt)
                             print('{}: TT {} Copy.'.format(session,tt))
                     else:
@@ -195,9 +195,8 @@ def GetClusterTable(cl_summary, oakPath, localPath):
             print('Could not save table to Oak.')
             print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
 
-def UpdateClusterInfo(oakPath, animal, localPath):
+def UpdateClusterInfo(oakPath, animal, localPath,overwrite=False):
     oakPath = Path(oakPath) # convert to Path object
-    overwrite=0
     #Cluster Summary Json File. If it doesn't exist, create it.
     cnt =0
     cl_summary_fn = oakPath / ('{}_ClusteringSummary.json'.format(animal))
@@ -227,13 +226,15 @@ def UpdateClusterInfo(oakPath, animal, localPath):
                 assert animal==an, 'Error, invalid session found.'
                 task = tmp[1]
                 date = tmp[2]
+                oses = an+'_'+task+'_'+date
+                print(oses)
                 if not date in cl_summary[animal].keys():
-                    cl_summary[animal][date]={}
-                if not task in cl_summary[animal][date].keys() or overwrite:
-                    cl_summary[animal][date][task] = {}
+                    cl_summary[an][date]={}
+                if not task in cl_summary[an][date].keys() or overwrite:
+                    cl_summary[an][date][task] = {}
 
-                cl_summary[animal][date][task] = GetSessionClusters(session)
-                cl_summary['Sessions'][session.name.strip('_KSClusters')] = cl_summary[animal][date][task]['Clustered']
+                cl_summary[an][date][task] = GetSessionClusters(session)
+                cl_summary['Sessions'][oses] = cl_summary[an][date][task]['Clustered']
             except:
                 print('Unable to process session {}'.format(session))
                 print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)

@@ -7,8 +7,11 @@ import shutil
 def session_entry(session_name,Files,sp):
     return {'session_name':str(session_name), 'Files':Files, 'nFiles':len(Files),'sp':str(sp)}
 
-def dict_entry(type,fn,hfn,sp):
-    return {'type':type,'filenames':str(fn),'headerFile':str(hfn),'sp':str(sp)}
+def dict_entry(type,fn,hfn,sp,sp2=[]):
+    if len(str(sp2))>0:
+        return {'type':type,'filenames':str(fn),'headerFile':str(hfn),'sp':str(sp),'sp2':str(sp2)}
+    else:
+        return {'type':type,'filenames':str(fn),'headerFile':str(hfn),'sp':str(sp)}
 
 if __name__ == '__main__':
     # Store taskID and TaskFile
@@ -45,6 +48,9 @@ if __name__ == '__main__':
 
     TasksDir = Path('./TasksDir')
     TasksDir.mkdir(parents=True, exist_ok=True)
+    OakDir = Path('/oak/stanford/groups/giocomo/alexg/Clustered/'+ID)
+    OakDir.mkdir(parents=True, exist_ok=True)
+
 
     date_obj = datetime.date.today()
     date_str= "%s_%s_%s" % (date_obj.month,date_obj.day,date_obj.year)
@@ -62,9 +68,11 @@ if __name__ == '__main__':
                     file = 'tt_' + str(tt) + '.bin'
                     sp = Path(str(session).strip('_Results')+'_KSClusters/tt_'+str(tt))
                     sp.mkdir(parents=True,exist_ok=True)
+                    sp2 = Path(str(session.name).strip('_Results')+'_KSClusters/tt_'+str(tt))
+                    sp2.mkdir(parents=True,exist_ok=True)
                     if (session / file).exists():
                         hfile = 'header_tt_' + str(tt)+'.json'
-                        Files[taskID] = dict_entry('KiloSortTTCluster',str(session / file),str(session / hfile),sp)
+                        Files[taskID] = dict_entry('KiloSortTTCluster',str(session / file),str(session / hfile),sp,sp2=sp2)
                         taskID+=1
             else:
                 file = 'probe.bin'
@@ -74,7 +82,7 @@ if __name__ == '__main__':
                     hfile = 'header_probe.json'
                     Files[taskID] = dict_entry('KiloSortNR32Cluster',str(session / file),str(session / hfile),sp)
                     taskID+=1
-                    
+
             if len(Files)>0:
                 Sessions[SessionCnt] = session_entry(session,Files,session)
             else:
