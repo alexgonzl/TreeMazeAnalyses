@@ -36,8 +36,14 @@ def GetSessionClusters(session):
                 table['mua_IDs'][int(tt)]=[]
 
                 d=pd.read_csv(fn,delimiter='\t')
-                cells = np.where(d['group']=='good')[0].tolist()
-                mua = np.where(d['group']=='mua')[0].tolist()
+                # found bug here. if clusters do not follow an order [0,1,2,3]
+                # this will give incorrect answers.
+                #cells = np.where(d['group']=='good')[0].tolist()
+                #mua = np.where(d['group']=='mua')[0].tolist()
+
+                # correct version.
+                cells = d['cluster_id'][d['group']=='good'].tolist()
+                mua = d['cluster_id'][d['group']=='mua'].tolist()
 
                 table['cell_IDs'][int(tt)]=[]
                 table['mua_IDs'][int(tt)]=[]
@@ -86,8 +92,10 @@ def CopyClustersToOak(localDir,oakDir):
             for tt in np.arange(1,nTTs+1):
                 try:
                     fn = localDir/sessionName/('tt_'+str(tt))/'cluster_group.tsv'
+                    fn2 = localDir/sessionName/('tt_'+str(tt))/'spike_clusters.npy'
                     if fn.exists():
                         sp = oakDir/sessionName/('tt_'+str(tt))/'cluster_group.tsv'
+                        sp2 = oakDir/sessionName/('tt_'+str(tt))/'spike_clusters.npy'
                         if sp.exists():
                             # if it exists @ destination but has been change, overwrite.
                             if not filecmp.cmp(str(fn),str(sp),shallow=True):
@@ -103,6 +111,10 @@ def CopyClustersToOak(localDir,oakDir):
                             shutil.copy(str(fn),str(sp))
                             updatedList.append(tt)
                             print('{}: TT {} Copy.'.format(session,tt))
+
+                        if not filecmp.cmp(str(fn2),str(sp2),shallow=True):
+                            shutil.copy(str(fn2),str(sp2))
+                            print('Updating spike_cluster IDs file')
                     else:
                         notExistsList.append(tt)
                 except:
@@ -127,12 +139,11 @@ def CopyClustersToOak(localDir,oakDir):
             #     print("{}: Indetical cluster files, no updates for TTs {}".format(session, notUpDatedList))
             print()
 
-def GetClusterTable(cl_summary, oakPath, localPath):
+def GetClusterTable(cl_summary, oakPath, localPath=''):
     '''
     Human readble summary cluster table. Tells, what needs to be done still!
     '''
     oakPath = Path(oakPath)
-    localPath = Path(localPath)
 
     colnames = ['SessionDate','Task','Animal','Clustered','nCells','nMua','BestTT']
     emptyEntry = {key: [0] for key in colnames}
@@ -174,17 +185,22 @@ def GetClusterTable(cl_summary, oakPath, localPath):
     localSave=0
     fn = 'ClusterTableSummary.csv'
     try:
-        d.to_csv(str(localPath/fn))
-        localSave=1
-        print('File Saved to {}'.format(oakPath))
+        if len(str(localPath))>0:
+            localPath = Path(localPath)
+            d.to_csv(str(localPath/fn))
+            localSave=1
+            print('File Saved to {}'.format(oakPath))
+        else:
+            localSave=0
     except:
         print('Could not save file locally.')
         print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
     try:
         d.to_csv(str(oakPath/fn))
+        oakSave =1
         print('File Saved to {}'.format(oakPath))
     except:
-        if localSave:
+        if localSave and (not oakSave) :
             try:
                 shutil.copy2(str(localPath/fn),str(oakPath/fn))
                 print('File copy from local to  {}'.format(oakPath))

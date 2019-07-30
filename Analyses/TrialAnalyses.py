@@ -60,7 +60,7 @@ for k,v in ValidTraj.items():
 ValidTrajNames = list(ValidTraj.keys())
 ValidOffTrajNames = list(ValidOffTraj.keys())
 
-def main(session, doPlots=True, overwrite = True):
+def main(session, doPlots=False, overwrite = False):
     print('\nAnalyzing Trials from session {}'.format(session))
     # Load Data
     sessionPaths = ZA.getSessionPaths(oakPaths,session)
@@ -745,7 +745,7 @@ def getModelPerf(dat,formula='',params=[],mixedlm=True):
     return train_aR2, aic, mdf
 
 ########################################
-def plotLinearTraj(savePath,TrFRData,TrLongMat):
+def plotLinearTraj(TrFRData,TrLongMat,savePath):
 
     cellColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'cell' in item]
     nCells = len(cellColIDs)
@@ -772,6 +772,7 @@ def plotLinearTraj(savePath,TrFRData,TrLongMat):
     pal = sns.xkcd_palette(['green','purple'])
 
     cellDat = TrLongMat.copy()
+    cnt =0
     for ut in ['cell','mua']:
         for cell in np.arange(nUnits[ut]):
             print('\nPlotting {} {}'.format(ut,cell))

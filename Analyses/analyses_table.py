@@ -1,61 +1,17 @@
-import numpy as np
-import pandas as pd
-from scipy import signal, ndimage, interpolate, stats
-from itertools import combinations
-
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-from matplotlib.ticker import FormatStrFormatter
-from matplotlib.offsetbox import AnchoredText
-import statsmodels.api as sm
-from sklearn.model_selection import train_test_split
-import statsmodels.formula.api as smf
-from joblib import Parallel, delayed
-
-import seaborn as sns
-font = {'family' : 'sans-serif',
-        'size'   : 20}
-plt.rc('font', **font)
-plt.rc('text',usetex=False)
+# creates a table with progress of analyses for each session
+# update analyses table
 
 from pathlib import Path
-import os,sys, time
-import h5py, json
+import os,sys, json, datetime, getopt
 import pickle as pkl
+import time
 
-sys.path.append('../PreProcessing/')
-sys.path.append('../TrackingAnalyses/')
-sys.path.append('../Lib/')
-sys.path.append('../Analyses/')
-
-import TreeMazeFunctions as TMF
-import spike_functions as SF
-import zone_analyses_session as ZA
-
-if not sys.warnoptions:
-    import warnings
-    warnings.simplefilter("ignore")
-
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-from matplotlib.ticker import FormatStrFormatter
-from matplotlib.offsetbox import AnchoredText
-
-import nept
-sys.path.append('../PreProcessing/')
-sys.path.append('../TrackingAnalyses/')
-sys.path.append('../Lib/')
-sys.path.append('../Analyses/')
-from filters_ag import *
-
-from importlib import reload  # Python 3.4+ only.
-import pre_process_neuralynx as PPN
-import TreeMazeFunctions as TMF
-import spike_functions as SF
-import spatial_tuning as ST
-import stats_functions as StatsF
-import plot_functions as PF
-import TrialAnalyses as TA
+oakPaths = {}
+oakPaths['Root'] = Path('/mnt/o/giocomo/alexg/')
+oakPaths['Clustered'] = Path('/mnt/o/giocomo/alexg/Clustered/')
+oakPaths['PreProcessed'] = Path('/mnt/o/giocomo/alexg/PreProcessed/')
+oakPaths['Raw'] = Path('/mnt/o/giocomo/alexg/RawData/InVivo/')
+oakPaths['Analyses'] = Path('/mnt/o/giocomo/alexg/Analyses')
 
 def getSessionPaths(rootPath, session,step=0.02,SR=32000):
     tmp = session.split('_')
@@ -73,8 +29,9 @@ def getSessionPaths(rootPath, session,step=0.02,SR=32000):
     Paths['Clusters'] = rootPath['Clustered'] / animal /(session+'_KSClusters')
     Paths['Raw'] = rootPath['Raw'] / animal / session
     Paths['PreProcessed'] = rootPath['PreProcessed'] / animal / (session + '_Results')
-    Paths['ClusterTable'] = rootPath['Clustered'] / animal / (animal+'_ClusteringSummary.json')
     Paths['Analyses'] = rootPath['Analyses'] / animal/ (session + '_Analyses')
+
+    Paths['ClusterTable'] = rootPath['Clustered'] / animal / (animal+'_ClusteringSummary.json')
 
     if not Paths['Clusters'].exists():
         print('Error, no Cluster Folder found.')
@@ -121,5 +78,31 @@ def getSessionPaths(rootPath, session,step=0.02,SR=32000):
     Paths['TrialPlots'] = Paths['Plots'] / 'TrialPlots'
     Paths['TrialPlots'].mkdir(parents=True, exist_ok=True)
 
+if __name__ == '__main__':
+    ID = ''
+    minFileSize = 16384
+    TetrodeRecording = 1
+    nTetrodes = 16
 
-    return Paths
+    if len(sys.argv)<2:
+        print("Usage: %s -a ID " % sys.argv[0])
+        sys.exit('Invalid input.')
+
+    print(sys.argv[1:])
+    myopts, args = getopt.getopt(sys.argv[1:],"a:p:")
+    for o, a in myopts:
+        print(o,a)
+        if o == '-a':
+            ID = str(a)
+        elif o == '-p':
+            if str(a)=='NR32':
+                TetrodeRecording = 0
+                nChannels = 32
+            elif str(a)=='TT16':
+                TetrodeRecording = 1
+                nTetrodes=16
+            else:
+                sys.exit('Invalid Probe Type.')
+        else:
+            print("Usage: %s -a ID " % sys.argv[0])
+            sys.exit('Invalid input. Aborting.')

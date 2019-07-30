@@ -18,7 +18,7 @@ import TreeMazeFunctions as TMF
 def getSessionSpikes(sessionPaths, overwrite=0):
 
     if (not sessionPaths['Cell_Spikes'].exists()) | overwrite:
-        print('Spikes Files not Found, creating them.')
+        print('Spikes Files not Found or overwrite=1, creating them.')
 
         animal = sessionPaths['animal']
         task = sessionPaths['task']
@@ -47,7 +47,7 @@ def getSessionSpikes(sessionPaths, overwrite=0):
 
 def getSessionBinSpikes(sessionPaths,resamp_t, overwrite=0):
     if (not sessionPaths['Cell_Bin_Spikes'].exists()) | overwrite:
-        print('Binned Spikes Files not Found, creating them.')
+        print('Binned Spikes Files not Found or overwrite=1, creating them.')
 
         cell_spikes, mua_spikes = getSessionSpikes(sessionPaths, overwrite)
 
@@ -62,7 +62,7 @@ def getSessionBinSpikes(sessionPaths,resamp_t, overwrite=0):
         np.save(sessionPaths['Mua_Bin_Spikes'],mua_bin_spikes)
         with sessionPaths['Spike_IDs'].open(mode='w') as f:
             json.dump(ids,f,indent=4)
-        print('Spike File Creation and Saving Completed.')
+        print('Bin Spike File Creation and Saving Completed.')
     else:
         print('Loading Spikes...')
         cell_bin_spikes=np.load(sessionPaths['Cell_Bin_Spikes'])
@@ -75,7 +75,7 @@ def getSessionBinSpikes(sessionPaths,resamp_t, overwrite=0):
 
 def getSessionFR(sessionPaths,overwrite=0):
     if (not sessionPaths['Cell_FR'].exists()) | overwrite:
-        print('Firing Rate Files Not Found, creating them.')
+        print('Firing Rate Files Not Found or overwrite=1, creating them.')
 
         cell_bin_spikes, mua_bin_spikes, ids = getSessionBinSpikes(sessionPaths, overwrite)
 
@@ -110,6 +110,7 @@ def get_TT_spikes(IDs,cluster_path):
     spikes = {}
     spikes['nUnits'] = nUnits
     for tt_id,cl_ids in IDs.items():
+
         if len(cl_ids)>0:
             ttPath = Path(cluster_path,'tt_'+str(tt_id))
             sp_times = np.load(str(ttPath/'spike_times.npy'))
