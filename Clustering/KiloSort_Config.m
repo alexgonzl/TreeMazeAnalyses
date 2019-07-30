@@ -11,27 +11,30 @@ ops.fproc               = fullfile(datDir,'temp_wh.dat'); % residual from RAM of
 ops.root                = datDir; % 'openEphys' only: where raw files are
 
 ops.fs                  = 32000;        % sampling rate		(omit if already in chanMap file)
-if strcmp(ftype,'probe')
+if strcmp(ftype,'NR32')
     ops.NchanTOT            = 32;           % total number of channels (omit if already in chanMap file)
     ops.Nchan               = 32;           % number of active channels (omit if already in chanMap file)
     ops.Nfilt               = 96;           % number of clusters to use (2-4 times more than Nchan, should be a multiple of 32)
     ops.nNeighPC            = 12;           % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
     ops.nNeigh              = 16;           % visualization only (Phy): number of neighboring templates to retain projections of (16)
-		ops.chanMap             = 'NR32_ChanMap.mat';
+    ops.chanMap             = 'NR32_ChanMap.mat';
+    % options for channel whitening
+    ops.whitening           = 'none'; % type of whitening (default 'full', for 'noSpikes' set options for spike detection below)
+    ops.nSkipCov            = 1; % compute whitening matrix from every N-th batch (1)
+    ops.whiteningRange      = inf; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)
+
 else
     ops.NchanTOT            = 4;           % total number of channels (omit if already in chanMap file)
     ops.Nchan               = 4;           % number of active channels (omit if already in chanMap file)
     ops.Nfilt               = 12;           % number of clusters to use (2-4 times more than Nchan, should be a multiple of 32)
     ops.nNeighPC            = 4;           % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
     ops.nNeigh              = 12;           % visualization only (Phy): number of neighboring templates to retain projections of (16)
-		ops.chanMap             = 'TT_ChanMap.mat'; % make this file using createChannelMapFile.m
-s
+    ops.chanMap             = 'TT_ChanMap.mat'; % make this file using createChannelMapFile.m
+    % options for channel whitening
+    ops.whitening           = 'none'; % type of whitening (default 'full', for 'noSpikes' set options for spike detection below)
+    ops.nSkipCov            = 2; % compute whitening matrix from every N-th batch (1)
+    ops.whiteningRange      = 8; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)
 end
-
-% options for channel whitening
-ops.whitening           = 'none'; % type of whitening (default 'full', for 'noSpikes' set options for spike detection below)
-ops.nSkipCov            = 1; % compute whitening matrix from every N-th batch (1)
-ops.whiteningRange      = inf; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)
 
 % define the channel map as a filename (string) or simply an array
 ops.criterionNoiseChannels = 0.2; % fraction of "noise" templates allowed to span all channel groups (see createChannelMapFile for more info).

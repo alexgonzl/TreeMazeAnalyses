@@ -23,10 +23,10 @@ for f =1:nFiles
       fprintf('fID: %s\n',fn);
       sp = fInfo.sp;
 
-      if (~exist(fullfile(sp,'rez.mat')) || overwriteFlag)
+      if (~exist(fullfile(sp,'rez.mat')) | overwriteFlag)
         if strcmp(type,'KiloSortTTCluster')
           rez=KiloSort_Master(fn,hfn,sp,'tt');
-        else if strcmp(type,'KiloSortNR32Cluster')
+        elseif strcmp(type,'KiloSortNR32Cluster')
           rez=KiloSort_Master(fn,hfn,sp,'NR32');
         end
         % save matlab results file
@@ -36,9 +36,9 @@ for f =1:nFiles
         fprintf('Clustering Completed for %i\n\n',f);
 
         if strcmp(type,'KiloSortTTCluster')
-          fn_s = strcat('tt_',str(f),'.bin')
+          fn_s = strcat('tt_',string(f),'.bin')
         else
-          fn_s = strcat('probe.bin')
+          fn_s = 'probe.bin'
         end
         if ~exists(fullfile(sp,fn_s))
           copyfile(fn,sp)
@@ -46,7 +46,7 @@ for f =1:nFiles
 
         sp2 = fInfo.sp2;
         if length(sp2)>0
-          if ~exists(fullfile(sp2,fn_s))
+          if ~exist(fullfile(sp2,fn_s))
             save(fullfile(sp2,  'rez.mat'), 'rez', '-v7.3');
             rezToPhy(rez, sp2);
             copyfile(fn,sp2);

@@ -68,7 +68,7 @@ if __name__ == '__main__':
                     file = 'tt_' + str(tt) + '.bin'
                     sp = Path(str(session).strip('_Results')+'_KSClusters/tt_'+str(tt))
                     sp.mkdir(parents=True,exist_ok=True)
-                    sp2 = Path(str(session.name).strip('_Results')+'_KSClusters/tt_'+str(tt))
+                    sp2 = OakDir / (session.name.strip('_Results')+'_KSClusters/tt_'+str(tt))
                     sp2.mkdir(parents=True,exist_ok=True)
                     if (session / file).exists():
                         hfile = 'header_tt_' + str(tt)+'.json'
