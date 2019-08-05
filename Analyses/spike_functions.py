@@ -2,18 +2,22 @@ import numpy as np
 import pandas as pd
 from scipy import signal, ndimage, interpolate, stats
 from scipy.interpolate import CubicSpline
+from sklearn.decomposition import PCA
 
 from pathlib import Path
 import os,sys, json
 import h5py
+import pickle as pkl
 
 sys.path.append('../PreProcessing/')
 sys.path.append('../TrackingAnalyses/')
 sys.path.append('../Lib/')
 from filters_ag import *
+from robust_stats import *
 
 import pre_process_neuralynx as PPN
 import TreeMazeFunctions as TMF
+
 
 def getSessionSpikes(sessionPaths, overwrite=0):
 
@@ -29,13 +33,23 @@ def getSessionSpikes(sessionPaths, overwrite=0):
         sessionCellIDs = CT[animal][date][task]['cell_IDs']
         sessionMuaIDs = CT[animal][date][task]['mua_IDs']
 
-        cell_spikes = get_TT_spikes(sessionCellIDs,sessionPaths['Clusters'])
-        mua_spikes = get_TT_spikes(sessionMuaIDs,sessionPaths['Clusters'])
+        cell_spikes, cell_wf, cell_wfi = get_TT_spikes(sessionCellIDs,sessionPaths)
+        mua_spikes, mua_wf, mua_wfi = get_TT_spikes(sessionMuaIDs,sessionPaths)
 
         with sessionPaths['Cell_Spikes'].open(mode='w') as f:
             json.dump(cell_spikes,f,indent=4)
+        with sessionPaths['Cell_WaveForms'].open(mode='wb') as f:
+            pkl.dump(cell_wf,f,pkl.HIGHEST_PROTOCOL)
+        with sessionPaths['Cell_WaveFormInfo'].open(mode='wb') as f:
+            pkl.dump(cell_wfi,f,pkl.HIGHEST_PROTOCOL)
+
         with sessionPaths['Mua_Spikes'].open(mode='w') as f:
             json.dump(mua_spikes,f,indent=4)
+        with sessionPaths['Mua_WaveForms'].open(mode='wb') as f:
+            pkl.dump(mua_wf,f,pkl.HIGHEST_PROTOCOL)
+        with sessionPaths['Mua_WaveFormInfo'].open(mode='wb') as f:
+            pkl.dump(mua_wfi,f,pkl.HIGHEST_PROTOCOL)
+
     else:
         with sessionPaths['Cell_Spikes'].open() as f:
             cell_spikes=json.load(f)
@@ -45,11 +59,76 @@ def getSessionSpikes(sessionPaths, overwrite=0):
 
     return cell_spikes, mua_spikes
 
-def getSessionBinSpikes(sessionPaths,resamp_t, overwrite=0):
-    if (not sessionPaths['Cell_Bin_Spikes'].exists()) | overwrite:
-        print('Binned Spikes Files not Found or overwrite=1, creating them.')
+def get_TT_spikes(IDs,sessionPaths,rej_thr=None):
+    cluster_path = Path(sessionPaths['Clusters'])
+    SR = sessionPaths['SR']
+    nUnits=0
+    for tt_id,cl_id in IDs.items():
+        nUnits+=len(cl_id)
+        pass
+    spikes = {}
+    spikes['nUnits'] = nUnits
+    wf = {}
+    wfi = {}
+    cnt = 0
+    for tt,cl_ids in IDs.items():
 
-        cell_spikes, mua_spikes = getSessionSpikes(sessionPaths, overwrite)
+        if len(cl_ids)>0:
+            ttPath = Path(cluster_path,'tt_'+tt)
+            dat = np.fromfile(str(ttPath / ('tt_{}.bin'.format(tt))),dtype=np.int16)
+            dat = dat.reshape(-1,4)
+            nSamps = len(dat)
+            sp_times = np.load(str(ttPath/'spike_times.npy'))
+            clusters = np.load(str(ttPath/'spike_clusters.npy'))
+
+            spikes[str(tt)]={}
+            for cl in cl_ids:
+                allspikes = sp_times[clusters==cl].flatten()
+                spikes2 = np.array(allspikes)
+                wf[cnt] = getSpikeWaveforms(spikes2,dat)
+                if not (rej_thr is None):
+                      badSpikes = SF.getSpikeOutliers(wf[cnt],thr = rej_thr)
+                      wf[cnt] = wf[cnt][~badSpikes,:]
+                      spikes2 = spikes2[~badSpikes]
+
+                wfi[cnt] = getWaveformInfo(spikes2,wf[cnt],nSamps,SR)
+                wfi[cnt]['tt'] = tt
+                wfi[cnt]['cl'] = cl
+                if not (rej_thr is None):
+                    wfi[cnt]['nExcSpikes'] = np.sum(badSpikes)
+
+                spikes[str(tt)][str(cl)] = spikes2.tolist()
+                cnt+=1
+    return spikes , wf, wfi
+
+def getWaveformInfo(spikes,waveforms,nSamps,SR):
+
+    nSp = len(spikes)
+    wfi = {}
+    wfi['mean'] = np.nanmean(waveforms,0)
+    wfi['std'] = np.nanstd(waveforms,0)
+    wfi['sem'] = stats.sem(waveforms,0)
+    wfi['nSp'] = nSp
+    wfi['tstat'] = stats.ttest_1samp(waveforms,0,axis=0)
+    wfi['mFR'] = nSp/nSamps*SR
+
+    # isi in ms
+    isi = np.diff(spikes)/SR*1000
+    wfi['isi_h'] = np.histogram(isi,bins=np.linspace(-1,20,25))
+    wfi['cv'] = np.std(isi)/np.mean(isi)
+    return wfi
+
+def getSessionBinSpikes(sessionPaths, overwrite=0, resamp_t=None,cell_spikes=None,mua_spikes=None):
+    if (not sessionPaths['Cell_Bin_Spikes'].exists()) | overwrite:
+        if  (resamp_t is None):
+            print('Missing resampled time input (resamp_t).')
+            PosDat = TMF.getBehTrackData(sessionPaths, overwrite=0)
+            resamp_t = PosDa['t']
+            del PosDat
+
+        print('Binned Spikes Files not Found or overwrite=1, creating them.')
+        if ((cell_spikes is None) or (mua_spikes is None)):
+            cell_spikes, mua_spikes = getSessionSpikes(sessionPaths, overwrite=overwrite)
 
         cell_bin_spikes,cell_ids = bin_TT_spikes(cell_spikes,resamp_t,origSR=sessionPaths['SR'])
         mua_bin_spikes,mua_ids = bin_TT_spikes(mua_spikes,resamp_t,origSR=sessionPaths['SR'])
@@ -60,11 +139,13 @@ def getSessionBinSpikes(sessionPaths,resamp_t, overwrite=0):
 
         np.save(sessionPaths['Cell_Bin_Spikes'],cell_bin_spikes)
         np.save(sessionPaths['Mua_Bin_Spikes'],mua_bin_spikes)
+
         with sessionPaths['Spike_IDs'].open(mode='w') as f:
             json.dump(ids,f,indent=4)
         print('Bin Spike File Creation and Saving Completed.')
+
     else:
-        print('Loading Spikes...')
+        print('Loading Binned Spikes...')
         cell_bin_spikes=np.load(sessionPaths['Cell_Bin_Spikes'])
         mua_bin_spikes=np.load(sessionPaths['Mua_Bin_Spikes'])
         with sessionPaths['Spike_IDs'].open() as f:
@@ -73,11 +154,12 @@ def getSessionBinSpikes(sessionPaths,resamp_t, overwrite=0):
 
     return cell_bin_spikes, mua_bin_spikes, ids
 
-def getSessionFR(sessionPaths,overwrite=0):
+def getSessionFR(sessionPaths,overwrite=0,cell_bin_spikes=None,mua_bin_spikes=None):
     if (not sessionPaths['Cell_FR'].exists()) | overwrite:
         print('Firing Rate Files Not Found or overwrite=1, creating them.')
 
-        cell_bin_spikes, mua_bin_spikes, ids = getSessionBinSpikes(sessionPaths, overwrite)
+        if ((cell_bin_spikes is None) or (mua_bin_spikes is None)):
+            cell_bin_spikes, mua_bin_spikes, ids = getSessionBinSpikes(sessionPaths, overwrite=overwrite)
 
         nCells,nTimePoints = cell_bin_spikes.shape
         cell_FR = np.zeros((nCells,nTimePoints))
@@ -101,24 +183,29 @@ def getSessionFR(sessionPaths,overwrite=0):
         print('FR Loaded.')
     return cell_FR, mua_FR
 
-def get_TT_spikes(IDs,cluster_path):
-    cluster_path = Path(cluster_path)
-    nUnits=0
-    for tt_id,cl_id in IDs.items():
-        nUnits+=len(cl_id)
-        pass
-    spikes = {}
-    spikes['nUnits'] = nUnits
-    for tt_id,cl_ids in IDs.items():
+def getSpikeSamps(sptimes):
+    a = np.zeros((len(sptimes),64),dtype=np.int)
+    cnt = 0
+    for s in sptimes:
+        a[cnt] = s+np.arange(64)-32
+        cnt+=1
+    return a
 
-        if len(cl_ids)>0:
-            ttPath = Path(cluster_path,'tt_'+str(tt_id))
-            sp_times = np.load(str(ttPath/'spike_times.npy'))
-            clusters = np.load(str(ttPath/'spike_clusters.npy'))
-            spikes[str(tt_id)]={}
-            for cl in cl_ids:
-                spikes[str(tt_id)][str(cl)]=sp_times[clusters==cl].tolist()
-    return spikes
+def getSpikeWaveforms(spikes,raw):
+    sp_stamps = getSpikeSamps(spikes)
+    return raw[sp_stamps,:]
+
+def getSpikeOutliers(waveforms,thr=2):
+    # waveforms = nSpikes x 64 x 4 np.array
+    nF = 64*4
+    nSp = waveforms.shape[0]
+    X = np.reshape(waveforms,(nSp,nF))
+
+    pca = PCA(n_components=2)
+    pca.fit(X)
+    lls = pca.score_samples(X)
+    badSpikes = np.abs(robust_zscore(lls))>thr
+    return badSpikes
 
 def bin_TT_spikes(spikes,resamp_t,origSR=32000):
     orig_time = np.arange(resamp_t[0],resamp_t[-1],1/origSR)

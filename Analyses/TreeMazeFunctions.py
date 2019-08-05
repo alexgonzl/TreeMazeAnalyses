@@ -124,7 +124,7 @@ filtCoeff = signal.firwin(smooth_filt_window, cutoff = 0.2, window = "hanning")
 ################################################################################
 # Main Functions: get
 ################################################################################
-def getBehTrackData(sessionPaths, overwrite):
+def getBehTrackData(sessionPaths, overwrite=0):
     if (not sessionPaths['BehavTrackDat'].exists()) | overwrite:
         print('Computing Position Data.')
         posPath = Path(sessionPaths['Raw'],'VT1.nvt')

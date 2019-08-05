@@ -43,74 +43,6 @@ oakPaths['PreProcessed'] = Path('/mnt/o/giocomo/alexg/PreProcessed/')
 oakPaths['Raw'] = Path('/mnt/o/giocomo/alexg/RawData/InVivo/')
 oakPaths['Analyses'] = Path('/mnt/o/giocomo/alexg/Analyses')
 
-def getSessionPaths(rootPath, session,step=0.02,SR=32000):
-    tmp = session.split('_')
-    animal = tmp[0]
-    task = tmp[1]
-    date = tmp[2]
-    se = animal+'_'+task+'_'+date
-
-    Paths = {}
-    Paths['session'] = se
-    Paths['animal']=animal
-    Paths['task'] = task
-    Paths['date'] = date
-    Paths['step'] = step
-    Paths['SR'] = SR
-    Paths['Clusters'] = rootPath['Clustered'] / animal /(se+'_KSClusters')
-    Paths['Raw'] = rootPath['Raw'] / animal / session
-    Paths['PreProcessed'] = rootPath['PreProcessed'] / animal / (se + '_Results')
-    Paths['ClusterTable'] = rootPath['Clustered'] / animal / (animal+'_ClusteringSummary.json')
-    Paths['Analyses'] = rootPath['Analyses'] / animal/ (se + '_Analyses')
-
-    if not Paths['Clusters'].exists():
-        print('Error, no Cluster Folder found.')
-    if not Paths['PreProcessed'].exists():
-        print('Error, no processed binaries found.')
-    if not Paths['ClusterTable'].exists():
-        print('Error, no clustering table found.')
-
-    Paths['Analyses'].mkdir(parents=True, exist_ok=True)
-
-    Paths['BehavTrackDat'] = Paths['Analyses'] / ('BehTrackVariables_{}ms.h5'.format(int(step*1000)))
-
-    Paths['Cell_Spikes'] = Paths['Analyses'] / 'Cell_Spikes.json'
-    Paths['Cell_Bin_Spikes'] = Paths['Analyses'] / ('Cell_Bin_Spikes_{}ms.npy'.format(int(step*1000)))
-    Paths['Cell_FR'] = Paths['Analyses'] / ('Cell_FR_{}ms.npy'.format(int(step*1000)))
-
-    Paths['Mua_Spikes'] = Paths['Analyses'] / 'Mua_Spikes.json'
-    Paths['Mua_Bin_Spikes'] = Paths['Analyses'] / ('Mua_Bin_Spikes_{}ms.npy'.format(int(step*1000)))
-    Paths['Mua_FR'] = Paths['Analyses'] / ('Mua_FR_{}ms.npy'.format(int(step*1000)))
-
-    Paths['Spike_IDs'] = Paths['Analyses'] / 'Spike_IDs.json'
-    Paths['ZoneAnalyses'] = Paths['Analyses'] / 'ZoneAnalyses.pkl'
-
-    Paths['TrialInfo'] = Paths['Analyses'] / 'TrInfo.pkl'
-    Paths['TrialCondMat'] = Paths['Analyses'] / 'TrialCondMat.csv'
-    Paths['TrLongPosMat'] = Paths['Analyses'] / 'TrLongPosMat.csv'
-    Paths['TrLongPosFRDat'] = Paths['Analyses'] / 'TrLongPosFRDat.csv'
-    Paths['TrModelFits'] = Paths['Analyses'] /  'TrModelFits.csv'
-
-    # plots directories
-    Paths['Plots'] = Paths['Analyses'] / 'Plots'
-    Paths['Plots'].mkdir(parents=True, exist_ok=True)
-    Paths['SampCountsPlots'] = Paths['Plots'] / 'SampCountsPlots'
-    Paths['SampCountsPlots'].mkdir(parents=True, exist_ok=True)
-
-    Paths['ZoneFRPlots'] = Paths['Plots'] / 'ZoneFRPlots'
-    Paths['ZoneFRPlots'].mkdir(parents=True, exist_ok=True)
-
-    Paths['ZoneCorrPlots'] = Paths['Plots'] / 'ZoneCorrPlots'
-    Paths['ZoneCorrPlots'].mkdir(parents=True, exist_ok=True)
-    Paths['SIPlots'] = Paths['Plots'] / 'SIPlots'
-    Paths['SIPlots'].mkdir(parents=True, exist_ok=True)
-
-    Paths['TrialPlots'] = Paths['Plots'] / 'TrialPlots'
-    Paths['TrialPlots'].mkdir(parents=True, exist_ok=True)
-
-
-    return Paths
-
 def createZoneAnalysesDict(ids):
     ZoneRes = {}
     ZoneRes['Zones'] = TMF.ZonesNames
@@ -193,12 +125,11 @@ def getDatPartitions(PosDat):
 
     return datPart
 
-def zone_analyses(session,overwriteAll=0,overwriteSpikes=0,overwritePos=0,doPlots=0):
+def zone_analyses(sessionPaths,overwriteAll=0,overwriteSpikes=0,overwritePos=0,doPlots=0):
 
     print()
-    print('Starting Analyses for Sesssion {}'.format(session))
+    print('Starting Analyses for Sesssion {}'.format(sessionPaths['session']))
 
-    sessionPaths = getSessionPaths(oakPaths,session)
     spacing=25
     occ_time_thr = 0.1 #s
     sigma = 1
@@ -215,8 +146,8 @@ def zone_analyses(session,overwriteAll=0,overwriteSpikes=0,overwritePos=0,doPlot
         PosDat = TMF.getBehTrackData(sessionPaths, overwrite=overwritePos)
         OccInfo = ST.getTM_OccupationInfo(PosDat,spacing=spacing,occ_time_thr=occ_time_thr)
         # get spikes and FR for cells and mua
-        cell_bin_spikes, mua_bin_spikes, ids= SF.getSessionBinSpikes(sessionPaths,PosDat['t'],overwrite=overwriteSpikes)
-        cell_FR, mua_FR = SF.getSessionFR(sessionPaths,overwrite=overwriteSpikes)
+        cell_bin_spikes, mua_bin_spikes, ids= SF.getSessionBinSpikes(sessionPaths,resamp_t=PosDat['t'],overwrite=overwriteSpikes)
+        cell_FR, mua_FR = SF.getSessionFR(sessionPaths,overwrite=overwriteSpikes, cell_bin_spikes=cell_bin_spikes,mua_bin_spikes=mua_bin_spikes)
         datPart = getDatPartitions(PosDat)
 
         ZoneRes = createZoneAnalysesDict(ids)
@@ -253,6 +184,8 @@ def zone_analyses(session,overwriteAll=0,overwriteSpikes=0,overwritePos=0,doPlot
                 h1 = ZoneRes['FR_Zone'][ut][0].loc['H1']
                 h2 = ZoneRes['FR_Zone'][ut][0].loc['H2']
                 ZoneRes['ZoneStability'][ut].loc[c]['HalfnRMSE'] = StatsF.RMSE(h1,h2)/np.nanmean(fr)
+
+                ZoneRes['OccInfo'] = OccInfo
 
         with sessionPaths['ZoneAnalyses'].open(mode='wb') as f:
             pkl.dump(ZoneRes,f,pkl.HIGHEST_PROTOCOL)
