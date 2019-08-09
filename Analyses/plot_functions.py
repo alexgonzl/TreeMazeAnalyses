@@ -40,7 +40,7 @@ import stats_functions as StatsF
 def plotPoly(poly,ax,alpha=0.3,color='g'):
     p1x,p1y = poly.exterior.xy
     ax.plot(p1x, p1y, color=[0.5, 0.5,0.5],
-        linewidth=2,)
+        linewidth=1.5)
     ring_patch = PolygonPatch(poly, fc=color, ec='none', alpha=alpha)
     ax.add_patch(ring_patch)
 
@@ -95,9 +95,9 @@ def plotTM_Trace(ax,x,y,bin_spikes=[], plot_zones=1, plot_raw_traces=0):
         for spine in plt.gca().spines.values():
             spine.set_visible(False)
     if plot_raw_traces:
-        ax.scatter(x,y,0.5,marker='D',color='grey',alpha=0.05)
+        ax.scatter(x,y,0.3,marker='D',color=[0.3,0.3,0.4],alpha=0.05)
     if len(bin_spikes)==len(x):
-        ax.scatter(x,y,s=bin_spikes, alpha=0.02, color = 'r')
+        ax.scatter(x,y,s=bin_spikes, alpha=0.1, color = 'r')
     ax.set_axis_off()
     ax.set_xlim(TMF.x_limit)
     ax.set_ylim(TMF.y_limit)

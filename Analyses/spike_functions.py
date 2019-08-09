@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy import signal, ndimage, interpolate, stats
+from scipy import signal, ndimage, interpolate, stats, spatial
 from scipy.interpolate import CubicSpline
 from sklearn.decomposition import PCA
 
@@ -19,7 +19,7 @@ import pre_process_neuralynx as PPN
 import TreeMazeFunctions as TMF
 
 
-def getSessionSpikes(sessionPaths, overwrite=0):
+def getSessionSpikes(sessionPaths, overwrite=0,rej_thr=None):
 
     if (not sessionPaths['Cell_Spikes'].exists()) | overwrite:
         print('Spikes Files not Found or overwrite=1, creating them.')
@@ -33,8 +33,8 @@ def getSessionSpikes(sessionPaths, overwrite=0):
         sessionCellIDs = CT[animal][date][task]['cell_IDs']
         sessionMuaIDs = CT[animal][date][task]['mua_IDs']
 
-        cell_spikes, cell_wf, cell_wfi = get_TT_spikes(sessionCellIDs,sessionPaths)
-        mua_spikes, mua_wf, mua_wfi = get_TT_spikes(sessionMuaIDs,sessionPaths)
+        cell_spikes, cell_wf, cell_wfi = get_TT_spikes(sessionCellIDs,sessionPaths,rej_thr=rej_thr)
+        mua_spikes, mua_wf, mua_wfi = get_TT_spikes(sessionMuaIDs,sessionPaths,rej_thr=rej_thr)
 
         with sessionPaths['Cell_Spikes'].open(mode='w') as f:
             json.dump(cell_spikes,f,indent=4)
@@ -60,6 +60,7 @@ def getSessionSpikes(sessionPaths, overwrite=0):
     return cell_spikes, mua_spikes
 
 def get_TT_spikes(IDs,sessionPaths,rej_thr=None):
+    spikeBuffer = 3 # in seconds
     cluster_path = Path(sessionPaths['Clusters'])
     SR = sessionPaths['SR']
     nUnits=0
@@ -84,14 +85,22 @@ def get_TT_spikes(IDs,sessionPaths,rej_thr=None):
             spikes[str(tt)]={}
             for cl in cl_ids:
                 allspikes = sp_times[clusters==cl].flatten()
-                spikes2 = np.array(allspikes)
+                spikes2 = np.array(allspikes).astype(np.float)
+
+                # delete spikes in at beggining and end of recording.
+                ids = (spikes2+spikeBuffer*SR)<nSamps
+                spikes2 = spikes2[ids]
+                ids = (spikes2-spikeBuffer*SR)>0
+                spikes2 = spikes2[ids]
+                spikes2 = spikes2.astype(np.int)
+
                 wf[cnt] = getSpikeWaveforms(spikes2,dat)
                 if not (rej_thr is None):
-                      badSpikes = SF.getSpikeOutliers(wf[cnt],thr = rej_thr)
+                      badSpikes = getSpikeOutliers(wf[cnt],thr = rej_thr)
                       wf[cnt] = wf[cnt][~badSpikes,:]
                       spikes2 = spikes2[~badSpikes]
 
-                wfi[cnt] = getWaveformInfo(spikes2,wf[cnt],nSamps,SR)
+                wfi[cnt] = getWaveformInfo(spikes2,wf[cnt],nSamps-2*spikeBuffer*SR,SR)
                 wfi[cnt]['tt'] = tt
                 wfi[cnt]['cl'] = cl
                 if not (rej_thr is None):
@@ -109,7 +118,7 @@ def getWaveformInfo(spikes,waveforms,nSamps,SR):
     wfi['std'] = np.nanstd(waveforms,0)
     wfi['sem'] = stats.sem(waveforms,0)
     wfi['nSp'] = nSp
-    wfi['tstat'] = stats.ttest_1samp(waveforms,0,axis=0)
+    wfi['tstat'] = stats.ttest_1samp(waveforms,0,axis=0)[0]
     wfi['mFR'] = nSp/nSamps*SR
 
     # isi in ms
@@ -119,16 +128,16 @@ def getWaveformInfo(spikes,waveforms,nSamps,SR):
     return wfi
 
 def getSessionBinSpikes(sessionPaths, overwrite=0, resamp_t=None,cell_spikes=None,mua_spikes=None):
-    if (not sessionPaths['Cell_Bin_Spikes'].exists()) | overwrite:
-        if  (resamp_t is None):
-            print('Missing resampled time input (resamp_t).')
-            PosDat = TMF.getBehTrackData(sessionPaths, overwrite=0)
-            resamp_t = PosDa['t']
-            del PosDat
+    if (not sessionPaths['Cell_Bin_Spikes'].exists()) or overwrite:
 
         print('Binned Spikes Files not Found or overwrite=1, creating them.')
         if ((cell_spikes is None) or (mua_spikes is None)):
             cell_spikes, mua_spikes = getSessionSpikes(sessionPaths, overwrite=overwrite)
+        if  (resamp_t is None):
+            print('Missing resampled time input (resamp_t).')
+            PosDat = TMF.getBehTrackData(sessionPaths, overwrite=0)
+            resamp_t = PosDat['t']
+            del PosDat
 
         cell_bin_spikes,cell_ids = bin_TT_spikes(cell_spikes,resamp_t,origSR=sessionPaths['SR'])
         mua_bin_spikes,mua_ids = bin_TT_spikes(mua_spikes,resamp_t,origSR=sessionPaths['SR'])
@@ -159,7 +168,7 @@ def getSessionFR(sessionPaths,overwrite=0,cell_bin_spikes=None,mua_bin_spikes=No
         print('Firing Rate Files Not Found or overwrite=1, creating them.')
 
         if ((cell_bin_spikes is None) or (mua_bin_spikes is None)):
-            cell_bin_spikes, mua_bin_spikes, ids = getSessionBinSpikes(sessionPaths, overwrite=overwrite)
+            cell_bin_spikes, mua_bin_spikes, ids = getSessionBinSpikes(sessionPaths)
 
         nCells,nTimePoints = cell_bin_spikes.shape
         cell_FR = np.zeros((nCells,nTimePoints))
@@ -195,16 +204,21 @@ def getSpikeWaveforms(spikes,raw):
     sp_stamps = getSpikeSamps(spikes)
     return raw[sp_stamps,:]
 
-def getSpikeOutliers(waveforms,thr=2):
+def getSpikeOutliers(waveforms,thr=None):
     # waveforms = nSpikes x 64 x 4 np.array
     nF = 64*4
     nSp = waveforms.shape[0]
     X = np.reshape(waveforms,(nSp,nF))
 
-    pca = PCA(n_components=2)
-    pca.fit(X)
-    lls = pca.score_samples(X)
-    badSpikes = np.abs(robust_zscore(lls))>thr
+    Xm = np.mean(X,0)
+    Y = np.zeros(nSp)
+    for s in np.arange(nSp):
+        Y[s] = spatial.distance.braycurtis(Xm,X[s])
+    badSpikes = Y>thr
+    # pca = PCA(n_components=2)
+    # pca.fit(X)
+    # lls = pca.score_samples(X)
+    # badSpikes = np.abs(robust_zscore(lls))>thr
     return badSpikes
 
 def bin_TT_spikes(spikes,resamp_t,origSR=32000):
@@ -225,7 +239,7 @@ def bin_TT_spikes(spikes,resamp_t,origSR=32000):
                         sp = np.delete(sp,np.where(out_of_record_spikes)[0])
                     sp_ids[cnt] = (tt,cl)
                     #print(type(sp[0]))
-                    sp_bins[cnt],_ = np.histogram(orig_time[sp],bins=nTimePoints)
+                    sp_bins[cnt],_ = np.histogram(orig_time[sp],np.concatenate([resamp_t,[resamp_t[-1]+step]]))
                 except:
                     print("Error processing Tetrode {}, Cluster {}".format(tt,cl))
                     pass

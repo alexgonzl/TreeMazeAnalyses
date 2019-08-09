@@ -60,12 +60,15 @@ for k,v in ValidTraj.items():
 ValidTrajNames = list(ValidTraj.keys())
 ValidOffTrajNames = list(ValidOffTraj.keys())
 
-def main(session, doPlots=False, overwrite = False):
-    print('\nAnalyzing Trials from session {}'.format(session))
+def main(sessionPaths, doPlots=False, overwrite = False, PosDat = None, cell_FR=None, mua_FR=None):
     # Load Data
-    sessionPaths = ZA.getSessionPaths(oakPaths,session)
-    PosDat = TMF.getBehTrackData(sessionPaths,0)
-    cell_FR, mua_FR = SF.getSessionFR(sessionPaths)
+    session = sessionPaths['session']
+    print('\nAnalyzing Trials from session {}'.format(session))
+
+    if ((cell_FR is None) or (cell_FR is None)):
+        cell_FR, mua_FR = SF.getSessionFR(sessionPaths)
+    if PosDat is None:
+        PosDat = TMF.getBehTrackData(sessionPaths)
 
     t0 = time.time()
     # dictionary with all trial information

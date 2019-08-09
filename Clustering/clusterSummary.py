@@ -239,7 +239,7 @@ def UpdateClusterInfo(oakPath, animal, localPath,overwrite=False):
             try:
                 tmp = session.name.split('_')
                 an = tmp[0]
-                assert animal==an, 'Error, invalid session found.'
+                #assert animal==an, 'Error, invalid session found.'
                 task = tmp[1]
                 date = tmp[2]
                 oses = an+'_'+task+'_'+date
