@@ -8,6 +8,13 @@ import time
 import pandas as pd
 import numpy as np
 
+sys.path.append('../PreProcessing/')
+sys.path.append('../Lib/')
+sys.path.append('../Analyses/')
+
+import TrialAnalyses as TA
+import TreeMazeFunctions as TMF
+
 nTetrodes=16
 
 def getOakPaths():
@@ -67,6 +74,11 @@ def getSessionPaths(rootPath, session,step=0.02,SR=32000):
     Paths['TrLongPosFRDat'] = Paths['Analyses'] / 'TrLongPosFRDat.csv'
     Paths['TrModelFits'] = Paths['Analyses'] /  'TrModelFits.csv'
 
+    Paths['CueDesc_SegUniRes'] = Paths['Analyses'] / 'CueDesc_SegUniRes.csv'
+    Paths['CueDesc_SegDecRes'] = Paths['Analyses'] / 'CueDesc_SegDecRes.csv'
+    Paths['CueDesc_SegDecSumRes'] = Paths['Analyses'] / 'CueDesc_SegDecSumRes.csv'
+    Paths['PopCueDesc_SegDecSumRes'] = Paths['Analyses'] / 'PopCueDesc_SegDecSumRes.csv'
+
     # plots directories
     Paths['Plots'] = Paths['Analyses'] / 'Plots'
     Paths['Plots'].mkdir(parents=True, exist_ok=True)
@@ -83,6 +95,10 @@ def getSessionPaths(rootPath, session,step=0.02,SR=32000):
 
     Paths['TrialPlots'] = Paths['Plots'] / 'TrialPlots'
     Paths['TrialPlots'].mkdir(parents=True, exist_ok=True)
+
+    Paths['CueDescPlots'] = Paths['Plots'] / 'CueDescPlots'
+    Paths['CueDescPlots'].mkdir(parents=True, exist_ok=True)
+
     return Paths
 
 def checkRaw(sePaths,aTable):
@@ -179,6 +195,64 @@ def checkTrialAnalyses(sePaths,aTable):
                 aTable.loc[se,'TrModels'] = 0
 
     return aTable
+
+def loadSessionData(sessionPaths):
+    wfi = {}
+    bin_spikes = {}
+    fr = {}
+
+    mods = {}
+    params = TA.getParamSet()
+    for k,pp in params.items():
+        s =''
+        for p in pp:
+            s+='-'+p
+        mods[k]=s[1:]
+
+    for ut in ['Cell','Mua']:
+        with sessionPaths[ut+'_WaveFormInfo'].open(mode='rb') as f:
+            wfi[ut] = pkl.load(f)
+        bin_spikes[ut]=np.load(sessionPaths[ut+'_Bin_Spikes'])
+        fr[ut] = np.load(sessionPaths[ut+'_FR'])
+
+    with sessionPaths['Spike_IDs'].open() as f:
+        ids = json.load(f)
+    with sessionPaths['ZoneAnalyses'].open(mode='rb') as f:
+        za = pkl.load(f)
+
+    PosDat = TMF.getBehTrackData(sessionPaths)
+
+    TrialLongMat = pd.read_csv( sessionPaths['TrLongPosMat'],index_col=0)
+    TrialFRLongMat = pd.read_csv(sessionPaths['TrLongPosFRDat'],index_col=0)
+    fitTable = pd.read_csv(sessionPaths['TrModelFits'],index_col=0)
+    TrialConds = pd.read_csv(sessionPaths['TrialCondMat'] ,index_col=0)
+
+
+    if isinstance(fitTable,pd.core.frame.DataFrame):
+        nUnits = fitTable.shape[0]
+        x=[]
+        for i in np.arange(nUnits):
+            if np.isnan(fitTable['modelNum'][i]):
+                x.append('UnCla')
+            else:
+                x.append(mods[fitTable['modelNum'][i]])
+        fitTable['selMod'] = x
+
+    dat = {}
+    dat['wfi'] = wfi
+    dat['bin_spikes'] = bin_spikes
+    dat['fr'] = fr
+
+    dat['ids'] = ids
+    dat['za'] = za
+
+    dat['PosDat'] = PosDat
+    dat['TrialLongMat'] = TrialLongMat
+    dat['TrialFRLongMat'] = TrialFRLongMat
+    dat['TrialModelFits'] = fitTable
+    dat['TrialConds'] = TrialConds
+
+    return dat
 
 
 # if __name__ == '__main__':
