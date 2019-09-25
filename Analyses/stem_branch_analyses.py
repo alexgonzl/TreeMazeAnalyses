@@ -37,7 +37,7 @@ def main(sePaths, doPlots=False, overwrite = False):
 
         # univariate analyses.
         fn = sePaths['CueDesc_SegUniRes']
-        if ((~fn.exists()) or overwrite):
+        if ( (not fn.exists()) or overwrite):
             CueDescFR_Dat, all_dat_spl = CueDesc_SegUniAnalysis(dat)
             CueDescFR_Dat.to_csv(sePaths['CueDesc_SegUniRes'])
 
@@ -49,8 +49,11 @@ def main(sePaths, doPlots=False, overwrite = False):
 
         # decododer analyses
         fn = sePaths['CueDesc_SegDecRes']
-        if ((~fn.exists()) or overwrite):
+        if ((not fn.exists()) or overwrite):
             singCellDec,singCellDecSummary, popDec = CueDesc_SegDecAnalysis(dat)
+            singCellDec['se'] = sePaths['session']
+            singCellDecSummary['se'] = sePaths['session']
+            popDec['se'] = sePaths['session']
             singCellDec.to_csv(fn)
             singCellDecSummary.to_csv(sePaths['CueDesc_SegDecSumRes'])
             popDec.to_csv(sePaths['PopCueDesc_SegDecSumRes'])
@@ -75,10 +78,6 @@ def main(sePaths, doPlots=False, overwrite = False):
             singCellDec = pd.read_csv(fn)
             singCellDecSummary = pd.read_csv(sePaths['CueDesc_SegDecSumRes'])
             popDec = pd.read_csv(sePaths['PopCueDesc_SegDecSumRes'])
-
-            singCellDec['se'] = sePaths['session']
-            singCellDecSummary['se'] = sePaths['session']
-            popDec['se'] = sePaths['session']
 
         return CueDescFR_Dat, singCellDec,singCellDecSummary, popDec
     except:
@@ -658,8 +657,9 @@ def getPerm_Pval(nullDist,score):
     return p
 
 def getPerm_Z(nullDist,score):
-    m = np.mean(nullDist)
-    s = np.std(nullDist)
+    tol = 0.001
+    m = np.nanmean(nullDist)
+    s = np.nanstd(nullDist + np.random.randn(len(nullDist))*tol)
 
     return (score-m)/s
 
@@ -815,7 +815,7 @@ def plotUnitRvL(CueDescFR_Dat,all_dat_spl,sePaths):
         f.savefig(str(fn),dpi=150, bbox_inches='tight',pad_inches=0.2)
         plt.close(f)
 
-def plotMultipleDecoderResults(data):
+def plotMultipleDecoderResults(data,plotAll=False,ci='sd'):
     f,ax = plt.subplots(2,3,figsize=(18,10))
 
     cols = ['Correct','Balanced','Incorrect']
@@ -825,10 +825,10 @@ def plotMultipleDecoderResults(data):
         subset = (data['Decoder'] == c)
 
         if c=='Balanced':
-            pal =sns.color_palette(desat=.7)[1:3]
+            pal =sns.color_palette(desat=.9)[1:3]
             hue_order = ['Cue','Desc']
         else:
-            pal =sns.color_palette(desat=.7)[:3]
+            pal =sns.color_palette(desat=.9)[:3]
             hue_order = ['Model','Cue','Desc']
 
         ii = 0
@@ -836,8 +836,9 @@ def plotMultipleDecoderResults(data):
         ax[ii,jj].set_yticks([0,25,50,75,100])
         ax[ii,jj].set_xlim([-0.2,6.2])
         ax[ii,jj].axhline(y=50,linestyle='--',color=0.3*np.ones(3),alpha=0.5)
-        ax[ii,jj] = sns.pointplot(x='Loc',y='BAc',hue='Test',dodge = 0.3,sort=False,ci='sd',palette = pal, data= data[ subset], ax=ax[ii,jj], hue_order = hue_order)
-        ax[ii,jj] = sns.stripplot(x='Loc',y='BAc',hue='Test', dodge = True ,alpha=0.3,palette  = pal, data= data[subset], ax=ax[ii,jj], hue_order = hue_order)
+        ax[ii,jj] = sns.pointplot(x='Loc',y='BAc',hue='Test',dodge = 0.3,sort=False,ci=ci,palette = pal, data= data[ subset], ax=ax[ii,jj], hue_order = hue_order)
+        if plotAll:
+            ax[ii,jj] = sns.stripplot(x='Loc',y='BAc',hue='Test', dodge = True ,alpha=0.3,palette  = pal, data= data[subset], ax=ax[ii,jj], hue_order = hue_order)
 
         ax[ii,jj].set_title(c)
         ax[ii,jj].set_xlabel('')
@@ -845,8 +846,9 @@ def plotMultipleDecoderResults(data):
         l.set_visible(False)
 
         ii=1
-        ax[ii,jj] = sns.pointplot(x='Loc',y='Z',hue='Test',dodge = 0.3,sort=False,ci='sd',palette  = pal, data= data[ subset ],ax=ax[ii,jj], hue_order = hue_order)
-        ax[ii,jj] = sns.stripplot(x='Loc',y='Z',hue='Test', dodge = True ,alpha=0.3,palette  = pal,data= data[subset],ax=ax[ii,jj], hue_order = hue_order)
+        ax[ii,jj] = sns.pointplot(x='Loc',y='Z',hue='Test',dodge = 0.3,sort=False,ci=ci,palette  = pal, data= data[ subset ],ax=ax[ii,jj], hue_order = hue_order)
+        if plotAll:
+            ax[ii,jj] = sns.stripplot(x='Loc',y='Z',hue='Test', dodge = True ,alpha=0.3,palette  = pal,data= data[subset],ax=ax[ii,jj], hue_order = hue_order)
 
         l=ax[ii,jj].get_legend()
         l.set_visible(False)

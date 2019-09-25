@@ -244,6 +244,10 @@ def UpdateClusterInfo(oakPath, animal, localPath,overwrite=False):
                 date = tmp[2]
                 oses = an+'_'+task+'_'+date
                 print(oses)
+
+                if an=='NE':
+                    an = 'Ne'
+
                 if not date in cl_summary[animal].keys():
                     cl_summary[an][date]={}
                 if not task in cl_summary[an][date].keys() or overwrite:
