@@ -209,6 +209,416 @@ def plotEventCounts(EventMat):
         a1.set_ylabel('Sample Counts [x1000]')
 
     return f
+
+def plotSpikeWFs(wfi,plotStd=0,ax=None):
+    wfm = wfi['mean']
+    wfstd = wfi['std']
+
+    if (ax is None):
+        f,ax = plt.subplots(1,figsize=(6,4))
+
+    nSamps,nChan = wfm.shape
+    x = np.arange(nSamps)
+    ax.plot(x,wfm,lw=3,alpha=0.9)
+    ax.get_yaxis().set_ticklabels([])
+    if plotStd:
+        for ch in np.arange(nChan):
+            plt.fill_between(x,wfm[:,ch]-wfstd[:,ch],wfm[:,ch]+wfstd[:,ch],alpha=0.1)
+
+    plt.legend(['ch'+str(ch) for ch in np.arange(nChan)],loc='best',frameon=False)
+    if nSamps==64:
+        ax.get_xaxis().set_ticks([0,16,32,48,64])
+        ax.get_xaxis().set_ticklabels(['0','','1','','2'])
+        ax.set_xlabel('Time [ms]')
+    ax.text(0.65,0.1,'mFR={0:.2f}[sp/s]'.format(wfi['mFR']),transform=ax.transAxes)
+    ax.set_title('WaveForms')
+    return ax
+
+def plotRateMap(binSpikes, PosDat, OccInfo, cbar = False, ax=None):
+    spikesByPos = ST.getPosBinSpikeMaps(binSpikes,PosDat)
+    FR_ByPos = ST.getPosBinFRMaps(spikesByPos,OccInfo['time'])
+
+    if (ax is None):
+        f,ax = plt.subplots(1,figsize=(4,4))
+    cmap = 'viridis'
+    colbar_label = 'FR [sp/s]'
+    smooth =  True
+    robust = False
+    w =4
+    s=1
+    ax.axis('equal')
+    pos = ax.get_position()
+    if cbar:
+        cax = plt.axes([pos.x0+pos.width,pos.y0,0.05*pos.width,0.3*pos.height])
+    if smooth:
+        FR_ByPos = ST.getSmoothMap(FR_ByPos,w,s)
+    maxFR = np.max(FR_ByPos)
+    with sns.plotting_context(font_scale=1):
+        if cbar:
+            ax=sns.heatmap(FR_ByPos.T,xticklabels=[],yticklabels=[],ax=ax,square=False, robust=robust, cbar_ax=cax, cmap=cmap,cbar_kws={'label': colbar_label})
+        else:
+            #ax=sns.heatmap(FR_ByPos.T,xticklabels=[],yticklabels=[],ax=ax,square=False, robust=robust, cbar=False, cmap=cmap)
+            #ax=sns.heatmap(FR_ByPos.T,xticklabels=[],yticklabels=[],ax=ax,square=False, robust=robust, cbar=False, cmap=cmap)
+            ax=sns.heatmap(FR_ByPos.T,xticklabels=[],yticklabels=[],ax=ax,square=True, robust=robust, cbar=False, cmap=cmap, vmin=0, vmax=maxFR*0.9)
+            ax.text(0.7,0.12,'{0:.2f}[Hz]'.format(maxFR),color='w',transform=ax.transAxes)
+
+        ax.invert_yaxis()
+    ax.set_title('Rate Map')
+    return ax
+
+def plotISIh(wfi,ax=None):
+    x = wfi['isi_h'][1][1:]
+    h = wfi['isi_h'][0]
+    #h = h/np.sum(h)
+
+    if (ax is None):
+        f,ax = plt.subplots(1,figsize=(4,3))
+
+
+    ax.bar(x,h,color=[0.3,0.3,0.4],alpha=0.8)
+    ax.set_xlabel('ISI [ms]')
+    ax.text(0.7,0.7,'CV={0:.2f}'.format(wfi['cv']),transform=ax.transAxes)
+    ax.set_yticklabels([''])
+    ax.set_title('ISI Hist')
+    return ax
+
+def plotTracesSpikes(PosDat,spikes,ax=None):
+    if (ax is None):
+        f,ax = plt.subplots(1,figsize=(4,4))
+
+    x = PosDat['x']
+    y = PosDat['y']
+    ax.scatter(x,y,0.2,marker='D',color=np.array([0.3,0.3,0.3])*2,alpha=0.05)
+    if len(spikes)==len(x):
+        ax.scatter(x,y,s=spikes, alpha=0.1, color = 'r')
+    ax.set_axis_off()
+    ax.set_xlim(TMF.x_limit)
+    ax.set_ylim(TMF.y_limit)
+    ax.set_title('Spike Traces')
+    return ax
+
+def plotZoneAvgMaps(ZoneAct,vmax = None,ax=None):
+    if (ax is None):
+        f,ax = plt.subplots(1,figsize=(6,6))
+
+    ax.axis('equal')
+    pos = ax.get_position()
+    cax = plt.axes([pos.x0+pos.width*0.78,pos.y0,0.05*pos.width,0.3*pos.height])
+
+    #cDat,colArray =  PF.getDatColorMap(ZoneAct)
+    #cMap = plt.get_cmap('RdBu_r')
+    cMap=mpl.colors.ListedColormap(sns.diverging_palette(250, 10, s=90, l=50,  n=50, center="dark"))
+    if vmax is None:
+        minima = np.min(ZoneAct)
+        maxima = np.max(ZoneAct)
+        vmax = np.max(np.abs([minima,maxima]))
+    norm = mpl.colors.Normalize(vmin=-vmax, vmax=vmax, clip=True)
+    mapper = mpl.cm.ScalarMappable(norm=norm, cmap=cMap)
+
+    cnt=0
+    for zo in TMF.ZonesNames:
+        #PF.plotPoly(TMF.MazeZonesGeom[zo],ax,color=cDat[cnt],alpha=1)
+        PF.plotPoly(TMF.MazeZonesGeom[zo],ax,color=mapper.to_rgba(ZoneAct[cnt]),alpha=1)
+
+        cnt+=1
+    for spine in plt.gca().spines.values():
+        spine.set_visible(False)
+
+    ax.set_axis_off()
+    ax.set_xlim(TMF.x_limit)
+    ax.set_ylim(TMF.y_limit)
+    ax.axis('equal')
+
+#     cNorm = mpl.colors.Normalize(vmin=colArray[0],vmax=colArray[-1])
+#     sm = plt.cm.ScalarMappable(cmap=cMap,norm=cNorm)
+    mapper.set_array([])
+
+    cbar = plt.colorbar(mapper,cax=cax)
+    cax.yaxis.set_tick_params(right=False)
+    #cax.get_yticklabels().set_fontsize(10)
+
+    return ax,cax
+
+def plotTrial_IO(frVector,trDat,ax=None):
+    if (ax is None):
+        f,ax = plt.subplots(1,figsize=(4,4))
+
+    cellDat = trDat.copy()
+    cellDat.loc[:,'zFR'] = frVector
+    subset = cellDat['Co']=='Co'
+
+    dat =[]
+    dat = cellDat[subset].groupby(['trID','IO','Cue','Desc']).mean()
+    dat = dat.reset_index()
+
+    pal = sns.xkcd_palette(['spring green','light purple'])
+    with sns.color_palette(pal):
+        ax=sns.violinplot(y='zFR',x='IO',hue='Desc',data=dat,split=True, ax=ax,
+                          scale='count',inner='quartile',hue_order=['L','R'],saturation=0.5,order=['Out','In','O_I'])
+    pal = sns.xkcd_palette(['emerald green','medium purple'])
+    with sns.color_palette(pal):
+        ax=sns.stripplot(y='zFR',x='IO',hue='Desc',data=dat,dodge=True,hue_order=['L','R'],alpha=0.7,ax=ax,
+                         edgecolor='gray',order=['Out','In','O_I'])
+
+    l=ax.get_legend()
+    l.set_visible(False)
+    ax.set_xlabel('Direction')
+
+    return ax
+
+def plotTrial_Desc(frVector,trDat,ax=None):
+    if (ax is None):
+        f,ax = plt.subplots(1,figsize=(4,4))
+
+    cellDat = trDat.copy()
+    cellDat.loc[:,'zFR'] = frVector
+    subset= cellDat['IO']=='Out'
+
+    dat = []
+    dat = cellDat[subset].groupby(['trID','Cue','Co','Desc']).mean()
+    dat = dat.reset_index()
+
+    pal = sns.xkcd_palette(['spring green','light purple'])
+    with sns.color_palette(pal):
+        ax=sns.violinplot(y='zFR',x='Desc',hue='Cue',data=dat,split=True,scale='width',ax=ax,
+                          inner='quartile',order=['L','R'],hue_order=['L','R'],saturation=0.5)
+    pal = sns.xkcd_palette(['emerald green','medium purple'])
+    with sns.color_palette(pal):
+        ax=sns.stripplot(y='zFR',x='Desc',hue='Cue',data=dat,dodge=True,order=['L','R'],ax=ax,
+                            hue_order=['L','R'],alpha=0.7,edgecolor='gray')
+
+    #
+    ax.set_xlabel('Decision')
+    #ax.set_ylabel('')
+
+    l=ax.get_legend()
+    handles, labels = ax.get_legend_handles_labels()
+    l.set_visible(False)
+    #plt.legend(handles[2:],labels[2:],bbox_to_anchor=(1.05, 0), borderaxespad=0.,frameon=False,title='Cue')
+
+    #plt.legend(handles[2:],labels[2:],loc=(1,1), borderaxespad=0.,frameon=False,title='Cue')
+
+    return ax,
+
+def plotLinearTraj(TrFRData,TrLongMat,savePath):
+
+    cellColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'cell' in item]
+    nCells = len(cellColIDs)
+    muaColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'mua' in item]
+    nMua = len(muaColIDs)
+    nTotalUnits = nCells+nMua
+    nUnits = {'cell':nCells,'mua':nMua}
+
+    cellCols = TrFRData.columns[cellColIDs]
+    muaCols = TrFRData.columns[muaColIDs]
+    unitCols = {'cell':cellCols,'mua':muaCols}
+
+    nMaxPos = 11
+    nMinPos = 7
+
+    sns.set()
+    sns.set(style="whitegrid",context='notebook',font_scale=1.5,rc={
+        'axes.spines.bottom': False,
+        'axes.spines.left': False,
+        'axes.spines.right': False,
+        'axes.spines.top': False,
+        'axes.edgecolor':'0.5'})
+
+    pal = sns.xkcd_palette(['green','purple'])
+
+    cellDat = TrLongMat.copy()
+    cnt =0
+    for ut in ['cell','mua']:
+        for cell in np.arange(nUnits[ut]):
+            print('\nPlotting {} {}'.format(ut,cell))
+
+            cellDat.loc[:,'zFR'] = TrFRData[unitCols[ut][cell]]
+
+            f,ax = plt.subplots(2,3, figsize=(15,6))
+            w = 0.25
+            h = 0.43
+            ratio = 6.5/10.5
+            hsp = 0.05
+            vsp = 0.05
+            W = [w,w*ratio,w*ratio]
+            yPos = [vsp,2*vsp+h]
+            xPos = [hsp,1.5*hsp+W[0],2.5*hsp+W[1]+W[0]]
+            xlims = [[-0.25,10.25],[3.75,10.25],[-0.25,6.25]]
+            for i in [0,1]:
+                for j in np.arange(3):
+                    ax[i][j].set_position([xPos[j],yPos[i],W[j],h])
+                    ax[i][j].set_xlim(xlims[j])
+
+            xPosLabels = {}
+            xPosLabels[0] = ['Home','SegA','Center','SegBE','Int','CDFG','Goals','CDFG','Int','CDFG','Goals']
+            xPosLabels[2] = ['Home','SegA','Center','SegBE','Int','CDFG','Goals']
+            xPosLabels[1] = xPosLabels[2][::-1]
+
+            plotAll = False
+            alpha=0.15
+            mlw = 1
+            with sns.color_palette(pal):
+                coSets = ['InCo','Co']
+                for i in [0,1]:
+                    if i==0:
+                        leg=False
+                    else:
+                        leg='brief'
+
+                    if plotAll:
+                        subset = (cellDat['IO']=='Out') & (cellDat['Co']==coSets[i]) & (cellDat['Valid'])
+                        ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
+                                 ax=ax[i][0],legend=False,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
+                        ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Desc',estimator=None,units='trID',data=cellDat[subset],
+                                ax=ax[i][0],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
+
+                        subset = (cellDat['IO']=='In') & (cellDat['Co']==coSets[i]) & (cellDat['Pos']>=4) & (cellDat['Valid'])
+                        ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
+                                 ax=ax[i][1],legend=False,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
+                        ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',estimator=None,units='trID',data=cellDat[subset],
+                                ax=ax[i][1],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
+
+                        subset = (cellDat['IO']=='O_I') & (cellDat['Co']==coSets[i])& (cellDat['Valid'])
+                        ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
+                                    ax=ax[i][2],legend=leg,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
+                        ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',estimator=None,units='trID',data=cellDat[subset],
+                                     ax=ax[i][2],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
+
+                    else:
+                        subset = (cellDat['IO']=='Out') & (cellDat['Co']==coSets[i]) & (cellDat['Valid'])
+                        ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
+                                              ax=ax[i][0],lw=2,legend=False,hue_order=['L','R'],style_order=['1','2','3','4'])
+                        subset = (cellDat['IO']=='In') & (cellDat['Co']==coSets[i]) & (cellDat['Pos']>=4) & (cellDat['Valid'])
+                        ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
+                                             ax=ax[i][1],lw=2,legend=False,hue_order=['L','R'],style_order=['1','2','3','4'])
+                        subset = (cellDat['IO']=='O_I') & (cellDat['Co']==coSets[i])& (cellDat['Valid'])
+                        ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
+                                             ax=ax[i][2],legend=leg,lw=2,hue_order=['L','R'],style_order=['1','2','3','4'])
+
+                    ax[i][1].set_xticks(np.arange(4,nMaxPos))
+                    ax[i][0].set_xticks(np.arange(nMaxPos))
+                    ax[i][2].set_xticks(np.arange(nMinPos))
+
+                    for j in np.arange(3):
+                        ax[i][j].set_xlabel('')
+                        ax[i][j].set_ylabel('')
+                        ax[i][j].tick_params(axis='x', rotation=60)
+
+                    ax[i][0].set_ylabel('{} zFR'.format(coSets[i]))
+                    ax[i][1].set_yticklabels('')
+
+                    if i==0:
+                        for j in np.arange(3):
+                            ax[i][j].set_xticklabels(xPosLabels[j])
+                    else:
+                        ax[i][0].set_title('Out')
+                        ax[i][1].set_title('In')
+                        ax[i][2].set_title('O-I')
+                        for j in np.arange(3):
+                            ax[i][j].set_xticklabels('')
+                l =ax[1][2].get_legend()
+                plt.legend(bbox_to_anchor=(1.05, 0), loc=6, borderaxespad=0.,frameon=False)
+                l.set_frame_on(False)
+
+                # out/in limits
+                lims = np.zeros((4,2))
+                cnt =0
+                for i in [0,1]:
+                    for j in [0,1]:
+                        lims[cnt]=np.array(ax[i][j].get_ylim())
+                        cnt+=1
+                minY = np.floor(np.min(lims[:,0])*20)/20
+                maxY = np.ceil(np.max(lims[:,1]*20))/20
+                for i in [0,1]:
+                    for j in [0,1]:
+                        ax[i][j].set_ylim([minY,maxY])
+
+                # o-i limits
+                lims = np.zeros((2,2))
+                cnt =0
+                for i in [0,1]:
+                    lims[cnt]=np.array(ax[i][2].get_ylim())
+                    cnt+=1
+                minY = np.floor(np.min(lims[:,0])*20)/20
+                maxY = np.ceil(np.max(lims[:,1]*20))/20
+                for i in [0,1]:
+                    ax[i][2].set_ylim([minY,maxY])
+
+            f.savefig(savePath/('LinearizedTr_{}ID-{}.pdf'.format(ut,cell)),dpi=300, bbox_inches='tight',pad_inches=0.2)
+            plt.close(f)
+
+def plotTrialConds(savePath,TrFRData,TrLongMat):
+    cellColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'cell' in item]
+    nCells = len(cellColIDs)
+    muaColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'mua' in item]
+    nMua = len(muaColIDs)
+    nTotalUnits = nCells+nMua
+    nUnits = {'cell':nCells,'mua':nMua}
+
+    cellCols = TrFRData.columns[cellColIDs]
+    muaCols = TrFRData.columns[muaColIDs]
+    unitCols = {'cell':cellCols,'mua':muaCols}
+
+    sns.set()
+    sns.set(style="whitegrid",context='notebook',font_scale=1.5,rc={
+        'axes.spines.bottom': False,
+        'axes.spines.left': False,
+        'axes.spines.right': False,
+        'axes.spines.top': False,
+        'axes.edgecolor':'0.5'})
+
+    cellDat = TrLongMat.copy()
+    for ut in ['cell','mua']:
+        for cell in np.arange(nUnits[ut]):
+            print('\nPlotting {} {}'.format(ut,cell))
+
+            cellDat.loc[:,'zFR'] = TrFRData[unitCols[ut][cell]]
+
+            f,ax = plt.subplots(1,2, figsize=(10,4))
+
+            # Correct Trials Out/In O_I
+            subset = cellDat['Co']=='Co'
+            dat =[]
+            dat = cellDat[subset].groupby(['trID','IO','Cue','Desc']).mean()
+            dat = dat.reset_index()
+
+            pal = sns.xkcd_palette(['spring green','light purple'])
+            with sns.color_palette(pal):
+                ax[0]=sns.violinplot(y='zFR',x='IO',hue='Desc',data=dat,split=True, ax=ax[0],
+                                  scale='count',inner='quartile',hue_order=['L','R'],saturation=0.5,order=['Out','In','O_I'])
+            pal = sns.xkcd_palette(['emerald green','medium purple'])
+            with sns.color_palette(pal):
+                ax[0]=sns.swarmplot(y='zFR',x='IO',hue='Desc',data=dat,dodge=True,hue_order=['L','R'],alpha=0.7,ax=ax[0],
+                                 edgecolor='gray',order=['Out','In','O_I'])
+            l=ax[0].get_legend()
+            l.set_visible(False)
+            ax[0].set_xlabel('Direction')
+
+            #
+            subset= cellDat['IO']=='Out'
+            dat = []
+            dat = cellDat[subset].groupby(['trID','Cue','Co','Desc']).mean()
+            dat = dat.reset_index()
+
+            pal = sns.xkcd_palette(['spring green','light purple'])
+            with sns.color_palette(pal):
+                ax[1]=sns.violinplot(y='zFR',x='Desc',hue='Cue',data=dat,split=True,scale='width',ax=ax[1],
+                                  inner='quartile',order=['L','R'],hue_order=['L','R'],saturation=0.5)
+            pal = sns.xkcd_palette(['emerald green','medium purple'])
+            with sns.color_palette(pal):
+                ax[1]=sns.swarmplot(y='zFR',x='Desc',hue='Cue',data=dat,dodge=True,order=['L','R'],ax=ax[1],
+                                    hue_order=['L','R'],alpha=0.7,edgecolor='gray')
+
+            #
+            ax[1].set_xlabel('Decision')
+            ax[1].set_ylabel('')
+            l=ax[1].get_legend()
+            handles, labels = ax[1].get_legend_handles_labels()
+            l.set_visible(False)
+            plt.legend(handles[2:],labels[2:],bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0.,frameon=False,title='Cue')
+
+            f.savefig(savePath/('TrialConds_{}ID-{}.pdf'.format(ut,cell)),dpi=300, bbox_inches='tight',pad_inches=0.2)
+            plt.close(f)
 ################################################################################
 ################################################################################
 ################################################################################
@@ -234,8 +644,6 @@ def stat_test(box_data1, box_data2, test):
 
     return pval, formattedOutput, testShortName
 
-
-
 def pvalAnnotation_text(x, pvalueThresholds):
     singleValue = False
     if type(x) is np.array:
@@ -255,7 +663,6 @@ def pvalAnnotation_text(x, pvalueThresholds):
             xAnnot[condition] = pvalueThresholds[i][1]
 
     return xAnnot if not singleValue else xAnnot.iloc[0]
-
 
 def add_stat_annotation(ax,
                         data=None, x=None, y=None, hue=None, order=None, hue_order=None,

@@ -647,22 +647,6 @@ def reformatFRDat(dat,Trials):
     allZoneFR = pd.DataFrame(allZoneFR)
     return allZoneFR, unitIDs
 
-def getPerm_Pval(nullDist,score):
-    nP = len(nullDist)
-    p = 1-np.sum(score>nullDist)/nP
-    if p==0:
-        p = 1/(nP+1)
-    if p==1:
-        p = 1-1/(nP+1)
-    return p
-
-def getPerm_Z(nullDist,score):
-    tol = 0.001
-    m = np.nanmean(nullDist)
-    s = np.nanstd(nullDist + np.random.randn(len(nullDist))*tol)
-
-    return (score-m)/s
-
 def datBarPlots(m,s,ax,xlabels,colors):
     nSubTypes,nGroups = m.shape
     w = 0.4
@@ -885,3 +869,19 @@ def getSigLevel(pvals):
             s[cnt] = ''
         cnt+=1
     return s
+
+def getPerm_Pval(nullDist,score):
+    nP = len(nullDist)
+    p = 1-np.sum(score>nullDist)/nP
+    if p==0:
+        p = 1/(nP+1)
+    if p==1:
+        p = 1-1/(nP+1)
+    return p
+
+def getPerm_Z(nullDist,score):
+    tol = 0.001
+    m = np.nanmean(nullDist)
+    s = np.nanstd(nullDist + np.random.randn(len(nullDist))*tol)
+
+    return (score-m)/s

@@ -196,10 +196,13 @@ def checkTrialAnalyses(sePaths,aTable):
 
     return aTable
 
-def loadSessionData(sessionPaths):
-    wfi = {}
-    bin_spikes = {}
-    fr = {}
+def loadSessionData(sessionPaths,vars = ['all']):
+
+    if 'all' in vars:
+        vars = ['wfi','bin_spikes','fr','ids','za','PosDat','TrialLongMat',
+        'TrialFRLongMat','fitTable','TrialConds']
+
+    dat = {}
 
     mods = {}
     params = TA.getParamSet()
@@ -209,48 +212,49 @@ def loadSessionData(sessionPaths):
             s+='-'+p
         mods[k]=s[1:]
 
+    for a in ['wfi','bin_spikes','fr']:
+        if a in vars:
+            dat[a] = {}
+            
     for ut in ['Cell','Mua']:
-        with sessionPaths[ut+'_WaveFormInfo'].open(mode='rb') as f:
-            wfi[ut] = pkl.load(f)
-        bin_spikes[ut]=np.load(sessionPaths[ut+'_Bin_Spikes'])
-        fr[ut] = np.load(sessionPaths[ut+'_FR'])
+        if 'wfi' in vars:
+            with sessionPaths[ut+'_WaveFormInfo'].open(mode='rb') as f:
+                dat['wfi'][ut] = pkl.load(f)
+        if 'bin_spikes' in vars:
+            dat['bin_spikes'][ut]=np.load(sessionPaths[ut+'_Bin_Spikes'])
+        if 'fr' in vars:
+            dat['fr'][ut] = np.load(sessionPaths[ut+'_FR'])
 
-    with sessionPaths['Spike_IDs'].open() as f:
-        ids = json.load(f)
-    with sessionPaths['ZoneAnalyses'].open(mode='rb') as f:
-        za = pkl.load(f)
+    if 'ids' in vars:
+        with sessionPaths['Spike_IDs'].open() as f:
+            dat['ids'] = json.load(f)
+    if 'za' in vars:
+        with sessionPaths['ZoneAnalyses'].open(mode='rb') as f:
+            dat['za'] = pkl.load(f)
 
-    PosDat = TMF.getBehTrackData(sessionPaths)
+    if 'PosDat' in vars:
+        dat['PosDat'] = TMF.getBehTrackData(sessionPaths)
 
-    TrialLongMat = pd.read_csv( sessionPaths['TrLongPosMat'],index_col=0)
-    TrialFRLongMat = pd.read_csv(sessionPaths['TrLongPosFRDat'],index_col=0)
-    fitTable = pd.read_csv(sessionPaths['TrModelFits'],index_col=0)
-    TrialConds = pd.read_csv(sessionPaths['TrialCondMat'] ,index_col=0)
+    if 'TrialLongMat' in vars:
+        dat['TrialLongMat'] = pd.read_csv( sessionPaths['TrLongPosMat'],index_col=0)
 
+    if 'TrialFRLongMat'  in vars:
+        dat['TrialFRLongMat'] = pd.read_csv(sessionPaths['TrLongPosFRDat'],index_col=0)
 
-    if isinstance(fitTable,pd.core.frame.DataFrame):
-        nUnits = fitTable.shape[0]
-        x=[]
-        for i in np.arange(nUnits):
-            if np.isnan(fitTable['modelNum'][i]):
-                x.append('UnCla')
-            else:
-                x.append(mods[fitTable['modelNum'][i]])
-        fitTable['selMod'] = x
+    if 'TrialConds' in vars:
+        dat['TrialConds'] = pd.read_csv(sessionPaths['TrialCondMat'] ,index_col=0)
 
-    dat = {}
-    dat['wfi'] = wfi
-    dat['bin_spikes'] = bin_spikes
-    dat['fr'] = fr
-
-    dat['ids'] = ids
-    dat['za'] = za
-
-    dat['PosDat'] = PosDat
-    dat['TrialLongMat'] = TrialLongMat
-    dat['TrialFRLongMat'] = TrialFRLongMat
-    dat['TrialModelFits'] = fitTable
-    dat['TrialConds'] = TrialConds
+    if 'fitTable' in vars:
+        dat['fitTable'] = pd.read_csv(sessionPaths['TrModelFits'],index_col=0)
+        if isinstance(fitTable,pd.core.frame.DataFrame):
+            nUnits = fitTable.shape[0]
+            x=[]
+            for i in np.arange(nUnits):
+                if np.isnan(fitTable['modelNum'][i]):
+                    x.append('UnCla')
+                else:
+                    x.append(mods[fitTable['modelNum'][i]])
+            dat['fitTable']['selMod'] = x
 
     return dat
 

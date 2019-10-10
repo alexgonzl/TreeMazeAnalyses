@@ -68,53 +68,31 @@ MazeZonesCoords ={'Home':[(-300, -80), (-300, 80),(300,80),(300, -80)],
                              (95,400),(80,500)],
                   'SegA': [(-150,80),(-80,500),(80,500),(150,80)],
                   'SegB': [(0,600),(0,700),(200,1000),(330,900),(75, 550)],
-                  'SegC': [(610,1180),(610,800),(330,900),(490,1160)],
-                  'SegD': [(200,1000),(50,1230),(450,1230),(490,1160)],
+                  'SegC': [(610,1180),(610,800),(330,900),(450,1180)],
+                  'SegD': [(200,1000),(50,1230),(450,1230),(450,1180)],
                   'SegE': [(0,600),(0,700),(-200,1000),(-330,900),(-75, 550)],
-                  'SegF': [(-200,1000),(-50,1230),(-450,1230),(-490,1160)],
-                  'SegG': [(-610,1180),(-610,800),(-330,900),(-490,1160)],
+                  'SegF': [(-200,1000),(-50,1230),(-450,1230),(-450,1180)],
+                  'SegG': [(-610,1180),(-610,800),(-330,900),(-450,1180)],
 
-                  # 'G1': [(550,1280),(750,1200),(750,800),(550,800)],
-                  # 'G2': [(50,1230),(50,1450),(400,1450),(550,1280)],
-                  # 'G3': [(-50,1230),(-50,1450),(-400,1450),(-620,1280)],
-                  # 'G4': [(-620,1280),(-800,1200),(-800,800),(-620,800)],
                   'G1':[(610,1180),(800,1180),(800,800),(610,800)],
                   'G2': [(50,1230),(50,1450),(450,1450),(450,1230)],
                   'G3': [(-50,1230),(-50,1450),(-450,1450),(-450,1230)],
                   'G4': [(-610,1180),(-800,1180),(-800,800),(-610,800)],
 
-                  'I1': [(200,1000),(490,1160),(330,900)],
-                  'I2': [(-330,900),(-490,1160),(-200,1000)],
+                  'I1': [(200,1000),(450,1180),(330,900)],
+                  'I2': [(-330,900),(-450,1180),(-200,1000)],
                  }
-# MazeZonesCoords ={'Home':[(-300, -80), (-300, 80),(300,80),(300, -80)],
-#                   'Center': [(-80,500),(-95,400),(-150,400),(-150,655),
-#                              (-75,550),(0,600),(75,550),(150,660),(150,400),
-#                              (95,400),(80,500)],
-#                   'SegA': [(-150,80),(-80,500),(80,500),(150,80)],
-#                   'SegB': [(0,600),(0,700),(200,1000),(330,900),(75, 550)],
-#                   'SegC': [(360,1060),(610,1250),(610,800),(330,900)],
-#                   'SegD': [(200,1000),(50,1230),(610,1250),(360,1060)],
-#                   'SegE': [(0,600),(0,700),(-200,1000),(-330,900),(-75, 550)],
-#                   'SegF': [(-200,1000),(-50,1230),(-610,1250),(-360,1060)],
-#                   'SegG': [(-360,1060),(-610,1250),(-610,800),(-330,900)],
-#
-#                   # 'G1': [(550,1280),(750,1200),(750,800),(550,800)],
-#                   # 'G2': [(50,1230),(50,1450),(400,1450),(550,1280)],
-#                   # 'G3': [(-50,1230),(-50,1450),(-400,1450),(-620,1280)],
-#                   # 'G4': [(-620,1280),(-800,1200),(-800,800),(-620,800)],
-#                   'G1':[(610,1250),(800,1200),(800,800),(610,800)],
-#                   'G2': [(50,1230),(50,1450),(400,1450),(610,1250)],
-#                   'G3': [(-50,1230),(-50,1450),(-400,1450),(-610,1250)],
-#                   'G4': [(-610,1250),(-800,1200),(-800,800),(-610,800)],
-#
-#                   'I1': [(200,1000),(360,1060),(330,900)],
-#                   'I2': [(-330,900),(-360,1060),(-200,1000)],
-#                  }
+
+# expected traveling distances for each segment in cm
+MazeZonesDists = {'Home': 4.0, 'Center': 4.0, 'SegA': 42.0, 'SegB': 42.0,
+                        'SegC': 21.0, 'SegD': 21.0, 'SegE': 42.0, 'SegF': 21.0,
+                        'SegG': 21.0, 'G1': 4.0, 'G2': 4.0, 'G3': 4.0,  'G4': 4.0,
+                        'I1':6.0,'I2':6.0}
+
 MazeZonesGeom = {}
 
 for zo in ZonesNames:
    MazeZonesGeom[zo] = Polygon(MazeZonesCoords[zo])
-
 
 # filtering params
 med_filt_window = 15 # in samples  21samps/60samps/s = 350ms
@@ -223,7 +201,7 @@ def getPositionMat(xs,ys,ts,step):
     PosDat['InSeg'] = np.sum(SegDirMat[InSeg].values,1).astype(bool)
     PosDat['OutSeg'] = np.sum(SegDirMat[OutSeg].values,1).astype(bool)
 
-    PosDat['Speed'], PosDat['HeadingAng'] = getVelocity(xs,ys,step)
+    PosDat['Speed'], PosDat['HeadingAng'] = ST.getVelocity(xs,ys,step)
     return PosDat
 
 def getEventMatrix(events,tp):
@@ -304,11 +282,6 @@ def getEventMatrix(events,tp):
 # Auxiliary Functions for creating Position Matrix
 ################################################################################
 
-def RotateXY(x,y,angle):
-    x2 = x*np.cos(angle)+y*np.sin(angle)
-    y2 = -x*np.sin(angle)+y*np.cos(angle)
-    return x2,y2
-
 def ScaleRotateSmoothTrackDat(x,y):
     #### Static parameters ####
 
@@ -327,7 +300,7 @@ def ScaleRotateSmoothTrackDat(x,y):
 
     ######## Operations ########
     # rotate
-    x,y=RotateXY(x,y,rot_ang)
+    x,y= ST.RotateXY(x,y,rot_ang)
 
     # re-scale
     x = -(x+x_translate)*x_pix2mm
@@ -359,8 +332,8 @@ def ScaleRotateSmoothTrackDat(x,y):
     # if there are still NaNs assign id to previous value
     badIds = np.where(np.logical_or(np.isnan(x), np.isnan(y)))[0]
     for ii in badIds:
-        x[ii] = getLastNotNanVal(x,ii)
-        y[ii] = getLastNotNanVal(y,ii)
+        x[ii] = ST.getLastNotNanVal(x,ii)
+        y[ii] = ST.getLastNotNanVal(y,ii)
 
     # filter / spatial smoothing
     x = signal.filtfilt(filtCoeff,1,x)
@@ -411,14 +384,6 @@ def correctXY(EventDat,x,y):
             cnt+=1
 
     return x2,y2
-
-def getLastNotNanVal(x,i):
-    if i==0:
-        return 0
-    elif np.isnan(x[i]):
-        return getLastNotNanVal(x,i-1)
-    else:
-        return x[i]
 
 def getMazeZones(x,y):
     # Get zones that contains each x,y point
@@ -528,24 +493,6 @@ def getSegmentDirs(PosZones,t):
             SegDirMat[segID][mark:(mark+dur)]=1
     return SegDirMat
 
-def atan2v(dy,dx):
-    N = len(dy)
-    out = np.zeros(N)
-    for i in np.arange(N):
-        out[i] = np.math.atan2(dy[i],dx[i])
-    return out
-
-def getVelocity(x,y,step):
-    dx = np.append(0,np.diff(x))
-    dy = np.append(0,np.diff(y))
-
-    dx = signal.filtfilt(filtCoeff,1,dx)
-    dy = signal.filtfilt(filtCoeff,1,dy)
-    dr = np.sqrt(dx**2+dy**2)
-
-    sp = dr/step # convert distance to speed
-    an = atan2v(dy,dx)
-    return sp,an
 
 ################################################################################
 # Auxiliary Functions for creating Event Matrix

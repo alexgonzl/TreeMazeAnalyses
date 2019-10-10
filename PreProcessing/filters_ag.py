@@ -25,7 +25,6 @@ def medFilt(x,window):
             pass
     return y
 
-
 def medFiltFilt(x,window):
     ''' moving median filter that can take np.nan as entries.
         note that the filter is non-causal, output of sample ii is the median

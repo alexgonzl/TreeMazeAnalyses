@@ -175,9 +175,9 @@ def getTrInfo(PosDat):
     TrInfo = {'All':{'Trials':[],'Co':[],'InCo':[]},'L':{'Trials':[],'Co':[],'InCo':[]},
                  'R':{'Trials':[],'Co':[],'InCo':[]},'BadTr':[],'Cues':np.full(nTr,''),'Desc':np.full(nTr,''),
                  'DurThr':45,'TrDurs':TrialDurs,
-                 'TrialVec':TrialVec,'TrStSamp':startIDs,'TrEnSamp':endIDs,'TrSeq':{'Pos':{},'Samp':{},'Dur':{}},
+                 'TrialVec':TrialVec,'TrStSamp':startIDs,'TrEnSamp':endIDs,'TrSeq':{'Pos':{},'Samp':{},'Dur':{}, 'Sp':{}},
                  'OffTrStSamp':endIDs,'OffTrEnSamp':endIDs+OffTrialDurs,'OffTrDurs':OffTrialDurs,
-                 'OffTrialVec':OffTrialVec, 'OffTrSeq':{'Pos':{},'Samp':{},'Dur':{}},
+                 'OffTrialVec':OffTrialVec, 'OffTrSeq':{'Pos':{},'Samp':{},'Dur':{}, 'Sp':{}},
                  'ValidSeqTrials':[],'ValidSeqOffTrials':[],'ValidSeqTrID':[],'ValidSeqOffTrID':[],
                  'ValidSeqNames':ValidTraj,'ValidSeqOffNames':ValidOffTraj}
 
@@ -186,8 +186,8 @@ def getTrInfo(PosDat):
     for tr in TrInfo['All']['Trials']:
         idx= TrialVec==tr
         for s in ['L','R']:
-            c = PosDat['EventDat']['C'+s][idx]
-            d = PosDat['EventDat'][s+'Ds'][idx]
+            c = PosDat['EventDat']['C'+s][idx] #cues
+            d = PosDat['EventDat'][s+'Ds'][idx] # decision
             if np.mean(d)>0.5: # descicion
                 TrInfo['Desc'][tr-1]=s
             if np.mean(c)>0.5: # cue
@@ -219,22 +219,23 @@ def getTrInfo(PosDat):
         sID = TrInfo['TrStSamp'][tr-1]
         eID = TrInfo['TrEnSamp'][tr-1]
 
-        p,s,d=getPosSequence(PosDat['PosZones'][idx],sID,eID)
-        #p,s,d=getPosSequence(p4[idx],sID,eID)
+        p,s,d,sp =getPosSequence(PosDat['PosZones'][idx],PosDat['Speed'][idx],sID,eID)
 
-        TrInfo['TrSeq']['Pos'][tr]=p
-        TrInfo['TrSeq']['Samp'][tr]=s
-        TrInfo['TrSeq']['Dur'][tr]=d
+        TrInfo['TrSeq']['Pos'][tr] = p
+        TrInfo['TrSeq']['Samp'][tr] = s
+        TrInfo['TrSeq']['Dur'][tr] = d
+        TrInfo['TrSeq']['Sp'][tr] = sp
 
         idx = TrInfo['OffTrialVec']==tr
         sID = TrInfo['OffTrStSamp'][tr-1]
         eID = TrInfo['OffTrEnSamp'][tr-1]
 
-        p,s,d=getPosSequence(PosDat['PosZones'][idx],sID,eID)
+        p,s,d,sp =getPosSequence(PosDat['PosZones'][idx],PosDat['Speed'][idx],sID,eID)
 
-        TrInfo['OffTrSeq']['Pos'][tr]=p
-        TrInfo['OffTrSeq']['Samp'][tr]=s
-        TrInfo['OffTrSeq']['Dur'][tr]=d
+        TrInfo['OffTrSeq']['Pos'][tr] = p
+        TrInfo['OffTrSeq']['Samp'][tr] = s
+        TrInfo['OffTrSeq']['Dur'][tr] = d
+        TrInfo['OffTrSeq']['Sp'][tr] = sp
 
     # determine if the sequence of positions are valid for each trial
     TrSeqs = {}
@@ -268,6 +269,7 @@ def getTrInfo(PosDat):
     TrInfo['ValidSeqOffTrials'] = vOTr
     TrInfo['ValidSeqTrID'] = TrSeqs
     TrInfo['ValidSeqOffTrID'] = OffTrSeqs
+
     return TrInfo
 
 def getTrCondMat(TrInfo,step=0.02):
@@ -308,7 +310,7 @@ def getTrLongMat(TrInfo,TrCondMat):
     nDatStack = 3 # Out, In, O-I
     nTr =len(TrInfo['All']['Trials'])
 
-    Cols = ['trID','Pos','IO','Cue','Desc','Traj','Loc','OTraj', 'Goal','ioMatch','Co','Valid']
+    Cols = ['trID','Pos','IO','Cue','Desc','Traj','Loc','OTraj', 'Goal','ioMatch','Co','Valid', 'Sp']
     nCols = len(Cols)
     TrLongMat = pd.DataFrame(np.full((nTr*nMaxPos*nDatStack,nCols),np.nan),columns=Cols)
 
@@ -331,29 +333,34 @@ def getTrLongMat(TrInfo,TrCondMat):
         # get true location in each trials sequence 'Loc'
         # note that 'Pos' is a numerical indicator of the order in a sequence
         outTrSeq = pd.DataFrame(np.full((nTr,nMaxPos),np.nan),index=TrInfo['All']['Trials'])
+        outTrSp = pd.DataFrame(np.full((nTr,nMaxPos),np.nan),index=TrInfo['All']['Trials'])
         inTrSeq = pd.DataFrame(np.full((nTr,nMaxPos),np.nan),index=TrInfo['All']['Trials'])
+        inTrSp = pd.DataFrame(np.full((nTr,nMaxPos),np.nan),index=TrInfo['All']['Trials'])
         oiTrSeq = pd.DataFrame(np.full((nTr,nMaxPos),np.nan),index=TrInfo['All']['Trials'])
+        oiTrSp = pd.DataFrame(np.full((nTr,nMaxPos),np.nan),index=TrInfo['All']['Trials'])
 
         for tr in TrInfo['All']['Trials']:
             traj = TrInfo['ValidSeqTrID'][tr]
+            sp = TrInfo['TrSeq']['Sp'][tr]
             if traj in ValidTrajNames:
-                seq =  TrInfo['ValidSeqNames'][traj]
+                seq = TrInfo['ValidSeqNames'][traj]
                 if len(seq)==nMaxPos:
                     outTrSeq.loc[tr]=seq
+                    outTrSp.loc[tr]=sp
                 else:
                     outTrSeq.loc[tr]= seq + [np.nan]*4
-            else:
-                outTrSeq.loc[tr] = [np.nan]*nMaxPos
+                    outTrSp.loc[tr]= sp.tolist() + [np.nan]*4
 
             otraj = TrInfo['ValidSeqOffTrID'][tr]
+            osp = TrInfo['OffTrSeq']['Sp'][tr]
             if otraj in ValidTrajNames:
                 oseq =  TrInfo['ValidSeqOffNames'][otraj]
                 if len(oseq)==nMaxPos:
-                    inTrSeq.loc[tr]=oseq
+                    inTrSeq.loc[tr]= oseq
+                    inTrSp.loc[tr] = osp
                 else:
                     inTrSeq.loc[tr]=[np.nan]*4+oseq
-            else:
-                inTrSeq.loc[tr]=[np.nan]*nMaxPos
+                    inTrSp.loc[tr] = [np.nan]*4+osp.tolist()
 
             if (traj in ValidTrajNames) and (otraj in ValidTrajNames):
                 if traj==otraj:
@@ -365,10 +372,17 @@ def getTrLongMat(TrInfo,TrCondMat):
                     oiTrSeq.loc[tr] = seq[:4]+[np.nan]+seq[9:]+[np.nan]*4
                 elif traj[2]=='S' and otraj[2]=='L':
                     oiTrSeq.loc[tr] = seq[:4]+[np.nan]+seq[5:]+[np.nan]*4
-            else:
-                oiTrSeq.loc[tr] = [np.nan]*nMaxPos
 
-        TrLongMat['Loc'] = pd.concat([pd.concat([outTrSeq.melt(value_name='Loc')['Loc'],inTrSeq.melt(value_name='Loc')['Loc']]),oiTrSeq.melt(value_name='Loc')['Loc']]).values
+            oiTrSp.loc[tr] = outTrSp.loc[tr].values-inTrSp.loc[tr][::-1].values
+
+        TrLongMat['Loc'] = pd.concat([pd.concat([outTrSeq.melt(value_name='Loc')['Loc'],
+                                                 inTrSeq.melt(value_name='Loc')['Loc']]),
+                                                 oiTrSeq.melt(value_name='Loc')['Loc']]).values
+
+        TrLongMat['Sp'] = pd.concat([pd.concat([outTrSp.melt(value_name='Sp')['Sp'],
+                                                 inTrSp.melt(value_name='Sp')['Sp']]),
+                                                 oiTrSp.melt(value_name='Sp')['Sp']]).values
+
         TrLongMat['Valid'] = ~TrLongMat['Loc'].isnull()
         TrLongMat['EvenTrial'] = TrLongMat['trID']%2==0
 
@@ -538,7 +552,10 @@ def fitTrModels(TrLongMat,TrFRData):
 ######################### Auxiliary Functions ##################################
 ################################################################################
 
-def getPosSequence(PosZones,startID,endID):
+def Traj2Dist(traj):
+    return np.array([ TMF.MazeZonesDists[p] for p in ValidTraj[traj]])
+
+def getPosSequence(PosZones,speed,startID,endID,step=0.02):
     nSamps = len(PosZones)
     pos = []
     samp = []
@@ -562,7 +579,11 @@ def getPosSequence(PosZones,startID,endID):
     else:
         dur[-1] = endID-samp[-1]
 
-    return pos, samp, dur
+    pos_speed = np.zeros(nPos)
+    for p in np.arange(nPos):
+        pos_speed[p] = np.nanmean(speed[np.arange(samp[p],samp[p]+dur[p],dtype=int)-startID ])/10
+
+    return pos, samp, dur, pos_speed
 
 def cmp(a,b):
     return (a>b)-(a<b)
@@ -746,224 +767,3 @@ def getModelPerf(dat,formula='',params=[],mixedlm=True):
     print("Model_AICc = {0:.3f}".format(aic))
 
     return train_aR2, aic, mdf
-
-########################################
-def plotLinearTraj(TrFRData,TrLongMat,savePath):
-
-    cellColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'cell' in item]
-    nCells = len(cellColIDs)
-    muaColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'mua' in item]
-    nMua = len(muaColIDs)
-    nTotalUnits = nCells+nMua
-    nUnits = {'cell':nCells,'mua':nMua}
-
-    cellCols = TrFRData.columns[cellColIDs]
-    muaCols = TrFRData.columns[muaColIDs]
-    unitCols = {'cell':cellCols,'mua':muaCols}
-
-    nMaxPos = 11
-    nMinPos = 7
-
-    sns.set()
-    sns.set(style="whitegrid",context='notebook',font_scale=1.5,rc={
-        'axes.spines.bottom': False,
-        'axes.spines.left': False,
-        'axes.spines.right': False,
-        'axes.spines.top': False,
-        'axes.edgecolor':'0.5'})
-
-    pal = sns.xkcd_palette(['green','purple'])
-
-    cellDat = TrLongMat.copy()
-    cnt =0
-    for ut in ['cell','mua']:
-        for cell in np.arange(nUnits[ut]):
-            print('\nPlotting {} {}'.format(ut,cell))
-
-            cellDat.loc[:,'zFR'] = TrFRData[unitCols[ut][cell]]
-
-            f,ax = plt.subplots(2,3, figsize=(15,6))
-            w = 0.25
-            h = 0.43
-            ratio = 6.5/10.5
-            hsp = 0.05
-            vsp = 0.05
-            W = [w,w*ratio,w*ratio]
-            yPos = [vsp,2*vsp+h]
-            xPos = [hsp,1.5*hsp+W[0],2.5*hsp+W[1]+W[0]]
-            xlims = [[-0.25,10.25],[3.75,10.25],[-0.25,6.25]]
-            for i in [0,1]:
-                for j in np.arange(3):
-                    ax[i][j].set_position([xPos[j],yPos[i],W[j],h])
-                    ax[i][j].set_xlim(xlims[j])
-
-            xPosLabels = {}
-            xPosLabels[0] = ['Home','SegA','Center','SegBE','Int','CDFG','Goals','CDFG','Int','CDFG','Goals']
-            xPosLabels[2] = ['Home','SegA','Center','SegBE','Int','CDFG','Goals']
-            xPosLabels[1] = xPosLabels[2][::-1]
-
-            plotAll = False
-            alpha=0.15
-            mlw = 1
-            with sns.color_palette(pal):
-                coSets = ['InCo','Co']
-                for i in [0,1]:
-                    if i==0:
-                        leg=False
-                    else:
-                        leg='brief'
-
-                    if plotAll:
-                        subset = (cellDat['IO']=='Out') & (cellDat['Co']==coSets[i]) & (cellDat['Valid'])
-                        ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
-                                 ax=ax[i][0],legend=False,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
-                        ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Desc',estimator=None,units='trID',data=cellDat[subset],
-                                ax=ax[i][0],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
-
-                        subset = (cellDat['IO']=='In') & (cellDat['Co']==coSets[i]) & (cellDat['Pos']>=4) & (cellDat['Valid'])
-                        ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
-                                 ax=ax[i][1],legend=False,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
-                        ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',estimator=None,units='trID',data=cellDat[subset],
-                                ax=ax[i][1],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
-
-                        subset = (cellDat['IO']=='O_I') & (cellDat['Co']==coSets[i])& (cellDat['Valid'])
-                        ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
-                                    ax=ax[i][2],legend=leg,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
-                        ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',estimator=None,units='trID',data=cellDat[subset],
-                                     ax=ax[i][2],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
-
-                    else:
-                        subset = (cellDat['IO']=='Out') & (cellDat['Co']==coSets[i]) & (cellDat['Valid'])
-                        ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
-                                              ax=ax[i][0],lw=2,legend=False,hue_order=['L','R'],style_order=['1','2','3','4'])
-                        subset = (cellDat['IO']=='In') & (cellDat['Co']==coSets[i]) & (cellDat['Pos']>=4) & (cellDat['Valid'])
-                        ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
-                                             ax=ax[i][1],lw=2,legend=False,hue_order=['L','R'],style_order=['1','2','3','4'])
-                        subset = (cellDat['IO']=='O_I') & (cellDat['Co']==coSets[i])& (cellDat['Valid'])
-                        ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
-                                             ax=ax[i][2],legend=leg,lw=2,hue_order=['L','R'],style_order=['1','2','3','4'])
-
-                    ax[i][1].set_xticks(np.arange(4,nMaxPos))
-                    ax[i][0].set_xticks(np.arange(nMaxPos))
-                    ax[i][2].set_xticks(np.arange(nMinPos))
-
-                    for j in np.arange(3):
-                        ax[i][j].set_xlabel('')
-                        ax[i][j].set_ylabel('')
-                        ax[i][j].tick_params(axis='x', rotation=60)
-
-                    ax[i][0].set_ylabel('{} zFR'.format(coSets[i]))
-                    ax[i][1].set_yticklabels('')
-
-                    if i==0:
-                        for j in np.arange(3):
-                            ax[i][j].set_xticklabels(xPosLabels[j])
-                    else:
-                        ax[i][0].set_title('Out')
-                        ax[i][1].set_title('In')
-                        ax[i][2].set_title('O-I')
-                        for j in np.arange(3):
-                            ax[i][j].set_xticklabels('')
-                l =ax[1][2].get_legend()
-                plt.legend(bbox_to_anchor=(1.05, 0), loc=6, borderaxespad=0.,frameon=False)
-                l.set_frame_on(False)
-
-                # out/in limits
-                lims = np.zeros((4,2))
-                cnt =0
-                for i in [0,1]:
-                    for j in [0,1]:
-                        lims[cnt]=np.array(ax[i][j].get_ylim())
-                        cnt+=1
-                minY = np.floor(np.min(lims[:,0])*20)/20
-                maxY = np.ceil(np.max(lims[:,1]*20))/20
-                for i in [0,1]:
-                    for j in [0,1]:
-                        ax[i][j].set_ylim([minY,maxY])
-
-                # o-i limits
-                lims = np.zeros((2,2))
-                cnt =0
-                for i in [0,1]:
-                    lims[cnt]=np.array(ax[i][2].get_ylim())
-                    cnt+=1
-                minY = np.floor(np.min(lims[:,0])*20)/20
-                maxY = np.ceil(np.max(lims[:,1]*20))/20
-                for i in [0,1]:
-                    ax[i][2].set_ylim([minY,maxY])
-
-            f.savefig(savePath/('LinearizedTr_{}ID-{}.pdf'.format(ut,cell)),dpi=300, bbox_inches='tight',pad_inches=0.2)
-            plt.close(f)
-
-def plotTrialConds(savePath,TrFRData,TrLongMat):
-    cellColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'cell' in item]
-    nCells = len(cellColIDs)
-    muaColIDs =  [i for i,item in enumerate(TrFRData.columns.values) if 'mua' in item]
-    nMua = len(muaColIDs)
-    nTotalUnits = nCells+nMua
-    nUnits = {'cell':nCells,'mua':nMua}
-
-    cellCols = TrFRData.columns[cellColIDs]
-    muaCols = TrFRData.columns[muaColIDs]
-    unitCols = {'cell':cellCols,'mua':muaCols}
-
-    sns.set()
-    sns.set(style="whitegrid",context='notebook',font_scale=1.5,rc={
-        'axes.spines.bottom': False,
-        'axes.spines.left': False,
-        'axes.spines.right': False,
-        'axes.spines.top': False,
-        'axes.edgecolor':'0.5'})
-
-    cellDat = TrLongMat.copy()
-    for ut in ['cell','mua']:
-        for cell in np.arange(nUnits[ut]):
-            print('\nPlotting {} {}'.format(ut,cell))
-
-            cellDat.loc[:,'zFR'] = TrFRData[unitCols[ut][cell]]
-
-            f,ax = plt.subplots(1,2, figsize=(10,4))
-
-            # Correct Trials Out/In O_I
-            subset = cellDat['Co']=='Co'
-            dat =[]
-            dat = cellDat[subset].groupby(['trID','IO','Cue','Desc']).mean()
-            dat = dat.reset_index()
-
-            pal = sns.xkcd_palette(['spring green','light purple'])
-            with sns.color_palette(pal):
-                ax[0]=sns.violinplot(y='zFR',x='IO',hue='Desc',data=dat,split=True, ax=ax[0],
-                                  scale='count',inner='quartile',hue_order=['L','R'],saturation=0.5,order=['Out','In','O_I'])
-            pal = sns.xkcd_palette(['emerald green','medium purple'])
-            with sns.color_palette(pal):
-                ax[0]=sns.swarmplot(y='zFR',x='IO',hue='Desc',data=dat,dodge=True,hue_order=['L','R'],alpha=0.7,ax=ax[0],
-                                 edgecolor='gray',order=['Out','In','O_I'])
-            l=ax[0].get_legend()
-            l.set_visible(False)
-            ax[0].set_xlabel('Direction')
-
-            #
-            subset= cellDat['IO']=='Out'
-            dat = []
-            dat = cellDat[subset].groupby(['trID','Cue','Co','Desc']).mean()
-            dat = dat.reset_index()
-
-            pal = sns.xkcd_palette(['spring green','light purple'])
-            with sns.color_palette(pal):
-                ax[1]=sns.violinplot(y='zFR',x='Desc',hue='Cue',data=dat,split=True,scale='width',ax=ax[1],
-                                  inner='quartile',order=['L','R'],hue_order=['L','R'],saturation=0.5)
-            pal = sns.xkcd_palette(['emerald green','medium purple'])
-            with sns.color_palette(pal):
-                ax[1]=sns.swarmplot(y='zFR',x='Desc',hue='Cue',data=dat,dodge=True,order=['L','R'],ax=ax[1],
-                                    hue_order=['L','R'],alpha=0.7,edgecolor='gray')
-
-            #
-            ax[1].set_xlabel('Decision')
-            ax[1].set_ylabel('')
-            l=ax[1].get_legend()
-            handles, labels = ax[1].get_legend_handles_labels()
-            l.set_visible(False)
-            plt.legend(handles[2:],labels[2:],bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0.,frameon=False,title='Cue')
-
-            f.savefig(savePath/('TrialConds_{}ID-{}.pdf'.format(ut,cell)),dpi=300, bbox_inches='tight',pad_inches=0.2)
-            plt.close(f)
