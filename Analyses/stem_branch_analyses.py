@@ -33,7 +33,7 @@ sns.set(style="whitegrid",font_scale=1,rc={
 def main(sePaths, doPlots=False, overwrite = False):
     try:
         dat = AT.loadSessionData(sePaths)
-        nUnits = dat['TrialModelFits'].shape[0]
+        nUnits = dat['fitTable2'].shape[0]
 
         # univariate analyses.
         fn = sePaths['CueDesc_SegUniRes']
@@ -137,15 +137,17 @@ def CueDesc_SegUniAnalysis(dat):
             tt = dat['ids']['cells'][str(unitNum)][0]
             cl = dat['ids']['cells'][str(unitNum)][1]
             fr = dat['TrialFRLongMat']['cell_'+str(unitNum)]
-            tR2 = dat['TrialModelFits']['testR2'][unitNum]
-            selMod = dat['TrialModelFits']['selMod'][unitNum]
+            #tR2 = dat['TrialModelFits']['testR2'][unitNum]
+            #selMod = dat['TrialModelFits']['selMod'][unitNum]
+            tR2 = dat['fitTable2']['testR2'][unitNum]
+            selMod = dat['fitTable2']['selMod'][unitNum]
         else:
             muaID = unitNum-nCells
             tt = dat['ids']['muas'][str(muaID)][0]
             cl = dat['ids']['muas'][str(muaID)][1]
             fr = dat['TrialFRLongMat']['mua_'+str(muaID)]
-            tR2 = dat['TrialModelFits']['testR2'][unitNum]
-            selMod = dat['TrialModelFits']['selMod'][unitNum]
+            tR2 = dat['fitTable2']['testR2'][unitNum]
+            selMod = dat['fitTable2']['selMod'][unitNum]
 
         # get mean fr per trial per partition
         mPartFRDat = pd.DataFrame(np.zeros((nTrials,3)),columns=FeatIDs)
@@ -288,7 +290,7 @@ def CueDesc_SegDecAnalysis(dat):
 
     trConds = dat['TrialConds']
     trDat = dat['TrialLongMat']
-    nUnits = dat['TrialModelFits'].shape[0]
+    nUnits = dat['fitTable2'].shape[0]
 
     gTrialsIDs = trConds['Good']
     Trials = trConds[gTrialsIDs].index.values
@@ -352,6 +354,7 @@ def CueDesc_SegDecAnalysis(dat):
         res.loc[2,'Z'] = getPerm_Z(desc_sh, res.loc[2,'BAc'] )
         res.loc[2,'P'] = getPerm_Pval(desc_sh, res.loc[2,'BAc'] )
 
+        res['nSeUnits'] = nUnits
         return res
 
     def balancedCoIncoTrial_Decoder(pe,feats):

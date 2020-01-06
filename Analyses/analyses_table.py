@@ -73,6 +73,7 @@ def getSessionPaths(rootPath, session,step=0.02,SR=32000):
     Paths['TrLongPosMat'] = Paths['Analyses'] / 'TrLongPosMat.csv'
     Paths['TrLongPosFRDat'] = Paths['Analyses'] / 'TrLongPosFRDat.csv'
     Paths['TrModelFits'] = Paths['Analyses'] /  'TrModelFits.csv'
+    Paths['TrModelFits2'] = Paths['Analyses'] /  'TrModelFits2.csv'
 
     Paths['CueDesc_SegUniRes'] = Paths['Analyses'] / 'CueDesc_SegUniRes.csv'
     Paths['CueDesc_SegDecRes'] = Paths['Analyses'] / 'CueDesc_SegDecRes.csv'
@@ -215,7 +216,7 @@ def loadSessionData(sessionPaths,vars = ['all']):
     for a in ['wfi','bin_spikes','fr']:
         if a in vars:
             dat[a] = {}
-            
+
     for ut in ['Cell','Mua']:
         if 'wfi' in vars:
             with sessionPaths[ut+'_WaveFormInfo'].open(mode='rb') as f:
@@ -245,16 +246,47 @@ def loadSessionData(sessionPaths,vars = ['all']):
         dat['TrialConds'] = pd.read_csv(sessionPaths['TrialCondMat'] ,index_col=0)
 
     if 'fitTable' in vars:
-        dat['fitTable'] = pd.read_csv(sessionPaths['TrModelFits'],index_col=0)
-        if isinstance(fitTable,pd.core.frame.DataFrame):
-            nUnits = fitTable.shape[0]
-            x=[]
-            for i in np.arange(nUnits):
-                if np.isnan(fitTable['modelNum'][i]):
-                    x.append('UnCla')
+
+        def addModelName(fitTable,fitNum):
+            mods = {}
+            if fitNum==1:
+                params = TA.getParamSet()
+            else:
+                params = TA.getParamSet(params=['Loc','IO','Cue','Sp','Co'])
+
+            for k,pp in params.items():
+                s =''
+                for p in pp:
+                    s+='-'+p
+                mods[k]=s[1:]
+            selModels = []
+
+            for u in fitTable['modelNum']:
+                if u>-1:
+                    selModels.append(mods[int(u)])
                 else:
-                    x.append(mods[fitTable['modelNum'][i]])
-            dat['fitTable']['selMod'] = x
+                    selModels.append('UnCla')
+            fitTable['selMod'] = selModels
+            return fitTable
+
+        if sessionPaths['TrModelFits'].exists():
+            dat['fitTable'] = pd.read_csv(sessionPaths['TrModelFits'],index_col=0)
+            if not ('selMod' in dat['fitTable'].columns):
+                dat['fitTable'] = addModelName(dat['fitTable'] ,1)
+        if sessionPaths['TrModelFits2'].exists():
+            dat['fitTable2'] = pd.read_csv(sessionPaths['TrModelFits2'],index_col=0)
+            if not ('selMod' in dat['fitTable2'].columns):
+                dat['fitTable2'] = addModelName(dat['fitTable2'] ,2)
+
+        #if isinstance(dat['fitTable'] ,pd.core.frame.DataFrame):
+        #    nUnits = dat['fitTable'] .shape[0]
+        #    x=[]
+        #    for i in np.arange(nUnits):
+        #        if np.isnan(dat['fitTable'] ['modelNum'][i]):
+        #            x.append('UnCla')
+        #        else:
+        #            x.append(mods[dat['fitTable'] ['modelNum'][i]])
+        #    dat['fitTable']['selMod'] = x
 
     return dat
 

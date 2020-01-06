@@ -123,7 +123,7 @@ def main(sessionPaths, doPlots=False, overwrite = False, PosDat = None, cell_FR=
     print('Process Completed Time {}s'.format(t4-t3))
 
     # fit lm to the trial wise data to obtain what neurons are coding for.
-    fn = sessionPaths['Analyses'] / 'TrModelFits.csv'
+    fn = sessionPaths['Analyses'] / 'TrModelFits2.csv'
     if (fn.exists() and (not overwrite)):
         print('Trial Model Fits Exists. Loading')
         TrModFits = pd.read_csv(fn)
@@ -479,8 +479,9 @@ def getTrLongFRDat(TrInfo,cell_FR,mua_FR):
     return Data
 
 def fitTrModels(TrLongMat,TrFRData):
-    all_params = ['Loc:IO','Loc','IO','Cue','Desc','Co']
-    param_set = getParamSet()
+    #all_params = ['Loc:IO','Loc','IO','Cue','Desc','Co']
+    all_params = ['Loc:IO','Loc','IO','Cue','Sp','Co']
+    param_set = getParamSet(params=['Loc','IO','Cue','Sp','Co'])
     nModels = len(param_set)
     R2thr = 0.2
 
@@ -495,7 +496,7 @@ def fitTrModels(TrLongMat,TrFRData):
     muaCols = TrFRData.columns[muaColIDs]
     unitCols = {'cell':cellCols,'mua':muaCols}
 
-    perfCols = ['FullMod_tR2','modelNum','trainR2','AICc','testR2']
+    perfCols = ['FullMod_tR2','modelNum','selMod','trainR2','AICc','testR2']
     Cols = ['ut']+perfCols+ all_params
     nCols = len(Cols)
     LM_Dat = pd.DataFrame(np.full((nTotalUnits,nCols),np.nan),columns=Cols)
@@ -536,6 +537,7 @@ def fitTrModels(TrLongMat,TrFRData):
                         print('Selected Model = {}, AICc = {}, testR2 = {} '.format(selMod,trainAICc[selMod],selMod_tR2))
 
                         LM_Dat.loc[cnt,'modelNum']=selMod
+                        LM_Dat.loc[cnt,'selMod'] = param_set[selMod]
                         LM_Dat.loc[cnt,'trainR2']=trainR2[selMod]
                         LM_Dat.loc[cnt,'AICc'] = trainAICc[selMod]
                         LM_Dat.loc[cnt,'testR2'] = selMod_tR2
@@ -544,7 +546,6 @@ def fitTrModels(TrLongMat,TrFRData):
                         LM_Dat.loc[cnt,param_set[selMod]] = np.sqrt(temp.summary_frame()['chi2'][param_set[selMod]])
                     cnt+=1
     except:
-        #print ("Error", sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2].tb_lineno)
         print(sys.exc_info())
     return LM_Dat
 
@@ -650,11 +651,10 @@ def aR2(model,y,fit=[]):
     aR2 = 1-(1-r2)*(n-1)/(n-p-1)
     return aR2
 
-def getParamSet():
+def getParamSet(params = ['Loc','IO','Cue','Desc','Co']):
     '''
     Returns a dictionary of parameter sets for modeling.
     '''
-    params = ['Loc','IO','Cue','Desc','Co']
     combs = []
 
     for i in np.arange(1, len(params)+1):

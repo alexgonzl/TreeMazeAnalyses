@@ -37,10 +37,10 @@ import stats_functions as StatsF
 ################################################################################
 # Plot Functions
 ################################################################################
-def plotPoly(poly,ax,alpha=0.3,color='g'):
+def plotPoly(poly,ax,alpha=0.3,color='g',lw=1.5,line_alpha=1):
     p1x,p1y = poly.exterior.xy
     ax.plot(p1x, p1y, color=[0.5, 0.5,0.5],
-        linewidth=1.5)
+        linewidth=lw,alpha=line_alpha)
     ring_patch = PolygonPatch(poly, fc=color, ec='none', alpha=alpha)
     ax.add_patch(ring_patch)
 
@@ -230,8 +230,8 @@ def plotSpikeWFs(wfi,plotStd=0,ax=None):
         ax.get_xaxis().set_ticks([0,16,32,48,64])
         ax.get_xaxis().set_ticklabels(['0','','1','','2'])
         ax.set_xlabel('Time [ms]')
-    ax.text(0.65,0.1,'mFR={0:.2f}[sp/s]'.format(wfi['mFR']),transform=ax.transAxes)
-    ax.set_title('WaveForms')
+    #ax.text(0.65,0.1,'mFR={0:.2f}[sp/s]'.format(wfi['mFR']),transform=ax.transAxes)
+    ax.set_title('WaveForms mFR={0:.2f}[sp/s]'.format(wfi['mFR']))
     return ax
 
 def plotRateMap(binSpikes, PosDat, OccInfo, cbar = False, ax=None):
@@ -260,10 +260,10 @@ def plotRateMap(binSpikes, PosDat, OccInfo, cbar = False, ax=None):
             #ax=sns.heatmap(FR_ByPos.T,xticklabels=[],yticklabels=[],ax=ax,square=False, robust=robust, cbar=False, cmap=cmap)
             #ax=sns.heatmap(FR_ByPos.T,xticklabels=[],yticklabels=[],ax=ax,square=False, robust=robust, cbar=False, cmap=cmap)
             ax=sns.heatmap(FR_ByPos.T,xticklabels=[],yticklabels=[],ax=ax,square=True, robust=robust, cbar=False, cmap=cmap, vmin=0, vmax=maxFR*0.9)
-            ax.text(0.7,0.12,'{0:.2f}[Hz]'.format(maxFR),color='w',transform=ax.transAxes)
+            #ax.text(0.7,0.12,'{0:.2f}[Hz]'.format(maxFR),color='w',transform=ax.transAxes)
 
         ax.invert_yaxis()
-    ax.set_title('Rate Map')
+    ax.set_title('Rate Map: maxFR {0:.2f}Hz'.format(maxFR))
     return ax
 
 def plotISIh(wfi,ax=None):
@@ -277,7 +277,7 @@ def plotISIh(wfi,ax=None):
 
     ax.bar(x,h,color=[0.3,0.3,0.4],alpha=0.8)
     ax.set_xlabel('ISI [ms]')
-    ax.text(0.7,0.7,'CV={0:.2f}'.format(wfi['cv']),transform=ax.transAxes)
+    #ax.text(0.7,0.7,'CV={0:.2f}'.format(wfi['cv']),transform=ax.transAxes)
     ax.set_yticklabels([''])
     ax.set_title('ISI Hist')
     return ax
@@ -318,7 +318,7 @@ def plotZoneAvgMaps(ZoneAct,vmax = None,ax=None):
     cnt=0
     for zo in TMF.ZonesNames:
         #PF.plotPoly(TMF.MazeZonesGeom[zo],ax,color=cDat[cnt],alpha=1)
-        PF.plotPoly(TMF.MazeZonesGeom[zo],ax,color=mapper.to_rgba(ZoneAct[cnt]),alpha=1)
+        plotPoly(TMF.MazeZonesGeom[zo],ax,color=mapper.to_rgba(ZoneAct[cnt]),alpha=1)
 
         cnt+=1
     for spine in plt.gca().spines.values():
@@ -415,14 +415,6 @@ def plotLinearTraj(TrFRData,TrLongMat,savePath):
 
     nMaxPos = 11
     nMinPos = 7
-
-    sns.set()
-    sns.set(style="whitegrid",context='notebook',font_scale=1.5,rc={
-        'axes.spines.bottom': False,
-        'axes.spines.left': False,
-        'axes.spines.right': False,
-        'axes.spines.top': False,
-        'axes.edgecolor':'0.5'})
 
     pal = sns.xkcd_palette(['green','purple'])
 
@@ -619,6 +611,148 @@ def plotTrialConds(savePath,TrFRData,TrLongMat):
 
             f.savefig(savePath/('TrialConds_{}ID-{}.pdf'.format(ut,cell)),dpi=300, bbox_inches='tight',pad_inches=0.2)
             plt.close(f)
+
+def plot_TrLinearized(fr,trDat,pos=None,f=None):
+
+    alpha=0.15
+    mlw = 1
+    nMaxPos = 11
+    nMinPos = 7
+    plotAll = False
+
+    cellDat = trDat.copy()
+    cellDat.loc[:,'zFR'] = fr
+
+    if (pos is None) or (f is None):
+        f,ax = plt.subplots(2,3, figsize=(16,6))
+        yorig = 0
+        xorig = 0
+        yscale = 1
+        xscale = 1
+    else:
+        xorig,yorig,xscale,yscale = pos
+        ax={}
+        #f.add_subplot()
+        cnt=0
+        for i in [0,1]:
+            ax[i]={}
+            for j in [0,1,2]:
+                #ax[i][j] = f.add_axes([0,0,1,1,])
+                ax[i][j] = f.add_subplot(231+cnt)
+                cnt+=1
+
+
+    w = 0.25*xscale
+    ratio = 6.5/10.5
+    hsp = 0.05*xscale
+    vsp = 0.05*yscale
+    h = 0.43*yscale
+    W = [w,w*ratio,w*ratio]
+    yPos = np.array([vsp,2*vsp+h])+yorig
+    xPos = np.array([hsp,1.5*hsp+W[0],2.5*hsp+W[1]+W[0]])+xorig
+    #print(xPos,yPos)
+
+    xlims = [[-0.25,10.25],[3.75,10.25],[-0.25,6.25]]
+    for i in [0,1]:
+        for j in np.arange(3):
+            ax[i][j].set_position([xPos[j],yPos[i],W[j],h])
+            ax[i][j].set_xlim(xlims[j])
+
+    xPosLabels = {}
+    xPosLabels[0] = ['Home','SegA','Center','SegBE','Int','CDFG','Goals','CDFG','Int','CDFG','Goals']
+    xPosLabels[2] = ['Home','SegA','Center','SegBE','Int','CDFG','Goals']
+    xPosLabels[1] = xPosLabels[2][::-1]
+
+    pal = sns.xkcd_palette(['green','purple'])
+
+    with sns.color_palette(pal):
+        coSets = ['InCo','Co']
+        for i in [0,1]:
+            if i==0:
+                leg=False
+            else:
+                leg='brief'
+
+            if plotAll:
+                subset = (cellDat['IO']=='Out') & (cellDat['Co']==coSets[i]) & (cellDat['Valid'])
+                ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
+                         ax=ax[i][0],legend=False,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
+                ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Desc',estimator=None,units='trID',data=cellDat[subset],
+                        ax=ax[i][0],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
+
+                subset = (cellDat['IO']=='In') & (cellDat['Co']==coSets[i]) & (cellDat['Pos']>=4) & (cellDat['Valid'])
+                ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
+                         ax=ax[i][1],legend=False,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
+                ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',estimator=None,units='trID',data=cellDat[subset],
+                        ax=ax[i][1],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
+
+                subset = (cellDat['IO']=='O_I') & (cellDat['Co']==coSets[i])& (cellDat['Valid'])
+                ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',ci=None,data=cellDat[subset],
+                            ax=ax[i][2],legend=leg,lw=3,hue_order=['L','R'],style_order=['1','2','3','4'])
+                ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',estimator=None,units='trID',data=cellDat[subset],
+                             ax=ax[i][2],legend=False,lw=mlw,alpha=alpha,hue_order=['L','R'])
+
+            else:
+                subset = (cellDat['IO']=='Out') & (cellDat['Co']==coSets[i]) & (cellDat['Valid'])
+                ax[i][0] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
+                                      ax=ax[i][0],lw=2,legend=False,hue_order=['L','R'])#,style_order=['1','2','3','4'])
+                subset = (cellDat['IO']=='In') & (cellDat['Co']==coSets[i]) & (cellDat['Pos']>=4) & (cellDat['Valid'])
+                ax[i][1] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
+                                     ax=ax[i][1],lw=2,legend=False,hue_order=['L','R'])#,style_order=['1','2','3','4'])
+                subset = (cellDat['IO']=='O_I') & (cellDat['Co']==coSets[i])& (cellDat['Valid'])
+                ax[i][2] = sns.lineplot(x='Pos',y='zFR',hue='Cue',style='Goal',data=cellDat[subset],
+                                     ax=ax[i][2],legend=leg,lw=2,hue_order=['L','R'])#,style_order=['1','2','3','4'])
+
+            ax[i][1].set_xticks(np.arange(4,nMaxPos))
+            ax[i][0].set_xticks(np.arange(nMaxPos))
+            ax[i][2].set_xticks(np.arange(nMinPos))
+
+            for j in np.arange(3):
+                ax[i][j].set_xlabel('')
+                ax[i][j].set_ylabel('')
+                ax[i][j].tick_params(axis='x', rotation=60)
+
+            ax[i][0].set_ylabel('{} zFR'.format(coSets[i]))
+            ax[i][1].set_yticklabels('')
+
+            if i==0:
+                for j in np.arange(3):
+                    ax[i][j].set_xticklabels(xPosLabels[j])
+            else:
+                ax[i][0].set_title('Out')
+                ax[i][1].set_title('In')
+                ax[i][2].set_title('O-I')
+                for j in np.arange(3):
+                    ax[i][j].set_xticklabels('')
+        l =ax[1][2].get_legend()
+        plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0.,frameon=False)
+        l.set_frame_on(False)
+
+        # out/in limits
+        lims = np.zeros((4,2))
+        cnt =0
+        for i in [0,1]:
+            for j in [0,1]:
+                lims[cnt]=np.array(ax[i][j].get_ylim())
+                cnt+=1
+        minY = np.floor(np.min(lims[:,0])*20)/20
+        maxY = np.ceil(np.max(lims[:,1]*20))/20
+        for i in [0,1]:
+            for j in [0,1]:
+                ax[i][j].set_ylim([minY,maxY])
+
+        # o-i limits
+        lims = np.zeros((2,2))
+        cnt =0
+        for i in [0,1]:
+            lims[cnt]=np.array(ax[i][2].get_ylim())
+            cnt+=1
+        minY = np.floor(np.min(lims[:,0])*20)/20
+        maxY = np.ceil(np.max(lims[:,1]*20))/20
+        for i in [0,1]:
+            ax[i][2].set_ylim([minY,maxY])
+
+        return f,ax
 ################################################################################
 ################################################################################
 ################################################################################

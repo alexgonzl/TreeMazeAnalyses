@@ -196,11 +196,11 @@ def zone_analyses(sessionPaths,overwriteAll=0,overwriteSpikes=0,overwritePos=0,d
         print('Zone Results Loaded')
         if doPlots:
             # get position info
-            PosDat = TMF.getBehTrackData(sessionPaths, overwrite)
+            PosDat = TMF.getBehTrackData(sessionPaths, overwrite=0)
             OccInfo = ST.getTM_OccupationInfo(PosDat,spacing=spacing,occ_time_thr=occ_time_thr)
             # get spikes and FR for cells and mua
-            cell_bin_spikes, mua_bin_spikes, ids= SF.getSessionBinSpikes(sessionPaths,PosDat['t'])
-            cell_FR, mua_FR = SF.getSessionFR(sessionPaths)
+            cell_bin_spikes, mua_bin_spikes, ids= SF.getSessionBinSpikes(sessionPaths,resamp_t=PosDat['t'],overwrite=0)
+            cell_FR, mua_FR = SF.getSessionFR(sessionPaths,overwrite=0, cell_bin_spikes=cell_bin_spikes,mua_bin_spikes=mua_bin_spikes)
 
     if doPlots:
         print("")

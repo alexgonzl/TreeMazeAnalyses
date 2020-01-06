@@ -1,3 +1,2 @@
+#! /bin/bash
 sudo mount -t drvfs O: /mnt/o
-
-sudo umount /mnt/o

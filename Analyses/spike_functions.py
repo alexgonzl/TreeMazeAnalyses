@@ -128,7 +128,8 @@ def getWaveformInfo(spikes,waveforms,nSamps,SR):
     return wfi
 
 def getSessionBinSpikes(sessionPaths, overwrite=0, resamp_t=None,cell_spikes=None,mua_spikes=None):
-    if (not sessionPaths['Cell_Bin_Spikes'].exists()) or overwrite:
+    #print(sessionPaths['Cell_Bin_Spikes'])
+    if (not sessionPaths['Cell_Bin_Spikes'].exists()) or (overwrite):
 
         print('Binned Spikes Files not Found or overwrite=1, creating them.')
         if ((cell_spikes is None) or (mua_spikes is None)):
