@@ -1,0 +1,14 @@
+{
+    "detect_sign": -1,
+    "adjacency_radius": -1,
+    "freq_min": 300,
+    "freq_max": 6000,
+    "filter": 0,
+    "whiten": 0,
+    "curation": 0,
+    "num_workers": 4,
+    "clip_size": 50,
+    "detect_threshold": 6,
+    "detect_interval": 10,
+    "noise_overlap_threshold": 0.15
+}

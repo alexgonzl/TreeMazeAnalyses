@@ -1,0 +1,68 @@
+2020-02-20 17:27:30,845 DEBUG    [circus.shared.parser] Creating a Circus Parser for datafile /mnt/c/Users/alexg8/Documents/TreeMazeAnalyses/Analyses/tmp_spykingcircus/recording.npy
+2020-02-20 17:27:30,847 DEBUG    [circus.shared.probes] Reading the probe file /mnt/c/Users/alexg8/Documents/TreeMazeAnalyses/Analyses/tmp_spykingcircus/probe.prb
+2020-02-20 17:27:30,848 DEBUG    [circus.shared.parser] Cluster not detected, so using global /tmp folder
+2020-02-20 17:27:30,848 DEBUG    [circus.shared.parser] Hanning filtering is activated
+2020-02-20 17:27:30,848 DEBUG    [circus.shared.parser] Trying to read file /mnt/c/Users/alexg8/Documents/TreeMazeAnalyses/Analyses/tmp_spykingcircus/recording.npy as numpy
+2020-02-20 17:27:30,849 DEBUG    [circus.files.datafile] sampling_rate is read from the params with a value of 30000.0
+2020-02-20 17:27:30,849 DEBUG    [circus.files.datafile] dtype_offset is not set and has the default value of auto
+2020-02-20 17:27:30,849 DEBUG    [circus.files.datafile] gain is not set and has the default value of 1.0
+2020-02-20 17:27:30,864 DEBUG    [circus.files.datafile] nb_channels is read from the header with a value of 4
+2020-02-20 17:27:30,864 DEBUG    [circus.files.datafile] data_dtype is read from the header with a value of float32
+2020-02-20 17:27:30,864 DEBUG    [circus.files.datafile] data type offset for float32 is automatically set to 0
+2020-02-20 17:27:30,864 DEBUG    [circus.shared.parser] Changing all values in the param depending on the rate
+2020-02-20 17:27:30,892 DEBUG    [circus.shared.parser] Trying to read file /mnt/c/Users/alexg8/Documents/TreeMazeAnalyses/Analyses/tmp_spykingcircus/recording.npy as numpy
+2020-02-20 17:27:30,893 DEBUG    [circus.files.datafile] sampling_rate is read from the params with a value of 30000.0
+2020-02-20 17:27:30,893 DEBUG    [circus.files.datafile] dtype_offset is not set and has the default value of auto
+2020-02-20 17:27:30,893 DEBUG    [circus.files.datafile] gain is not set and has the default value of 1.0
+2020-02-20 17:27:30,895 DEBUG    [circus.files.datafile] nb_channels is read from the header with a value of 4
+2020-02-20 17:27:30,895 DEBUG    [circus.files.datafile] data_dtype is read from the header with a value of float32
+2020-02-20 17:27:30,896 DEBUG    [circus.files.datafile] data type offset for float32 is automatically set to 0
+2020-02-20 17:27:30,912 INFO     [circus.shared.files] Number of recorded channels : 4
+2020-02-20 17:27:30,912 INFO     [circus.shared.files] Number of analyzed channels : 4
+2020-02-20 17:27:30,912 INFO     [circus.shared.files] File format                 : NUMPY
+2020-02-20 17:27:30,913 INFO     [circus.shared.files] Data type                   : float32
+2020-02-20 17:27:30,913 INFO     [circus.shared.files] Sampling rate               : 30 kHz
+2020-02-20 17:27:30,913 INFO     [circus.shared.files] Duration of the recording   : 0 min 10 s 0 ms
+2020-02-20 17:27:30,913 INFO     [circus.shared.files] Width of the templates      : 3 ms
+2020-02-20 17:27:30,913 INFO     [circus.shared.files] Spatial radius considered   : 200 um
+2020-02-20 17:27:30,913 INFO     [circus.shared.files] Threshold crossing          : negative
+2020-02-20 17:27:30,919 DEBUG    [circus.shared.mpi] MPI detected: ('MPICH', (3, 3, 0))
+2020-02-20 17:27:32,673 DEBUG    [circus.filtering] Initializing the filtering step...
+2020-02-20 17:27:32,673 DEBUG    [circus.filtering] Reading the input file...
+2020-02-20 17:27:32,673 DEBUG    [circus.shared.parser] Trying to read file /mnt/c/Users/alexg8/Documents/TreeMazeAnalyses/Analyses/tmp_spykingcircus/recording.npy as numpy
+2020-02-20 17:27:32,674 DEBUG    [circus.files.datafile] sampling_rate is read from the params with a value of 30000.0
+2020-02-20 17:27:32,674 DEBUG    [circus.files.datafile] dtype_offset is not set and has the default value of auto
+2020-02-20 17:27:32,674 DEBUG    [circus.files.datafile] gain is not set and has the default value of 1.0
+2020-02-20 17:27:32,678 DEBUG    [circus.files.datafile] nb_channels is read from the header with a value of 4
+2020-02-20 17:27:32,679 DEBUG    [circus.files.datafile] data_dtype is read from the header with a value of float32
+2020-02-20 17:27:32,679 DEBUG    [circus.files.datafile] data type offset for float32 is automatically set to 0
+2020-02-20 17:27:32,679 DEBUG    [circus.shared.parser] Changing all values in the param depending on the rate
+2020-02-20 17:27:32,916 DEBUG    [circus.shared.mpi] MPI detected: ('MPICH', (3, 3, 0))
+2020-02-20 17:27:34,051 DEBUG    [circus.shared.mpi] Setting data chunk size to 30 second
+2020-02-20 17:27:34,052 DEBUG    [circus.whitening] Analyzing data to get whitening matrices and thresholds...
+2020-02-20 17:27:34,052 DEBUG    [circus.files.datafile] There are 0 chunks of size 900000
+2020-02-20 17:27:34,052 DEBUG    [circus.files.datafile] The last chunk has size 300000
+2020-02-20 17:27:34,053 DEBUG    [circus.shared.parser] Trying to read file /mnt/c/Users/alexg8/Documents/TreeMazeAnalyses/Analyses/tmp_spykingcircus/recording.npy as numpy
+2020-02-20 17:27:34,053 DEBUG    [circus.files.datafile] sampling_rate is read from the params with a value of 30000.0
+2020-02-20 17:27:34,053 DEBUG    [circus.files.datafile] dtype_offset is not set and has the default value of auto
+2020-02-20 17:27:34,053 DEBUG    [circus.files.datafile] gain is not set and has the default value of 1.0
+2020-02-20 17:27:34,054 DEBUG    [circus.files.datafile] nb_channels is read from the header with a value of 4
+2020-02-20 17:27:34,054 DEBUG    [circus.files.datafile] data_dtype is read from the header with a value of float32
+2020-02-20 17:27:34,054 DEBUG    [circus.files.datafile] data type offset for float32 is automatically set to 0
+2020-02-20 17:27:34,054 DEBUG    [circus.whitening] Too much cores, automatically resizing the data chunks
+2020-02-20 17:27:34,054 DEBUG    [circus.files.datafile] There are 4 chunks of size 75000
+2020-02-20 17:27:34,054 DEBUG    [circus.files.datafile] The last chunk has size 0
+2020-02-20 17:27:34,107 DEBUG    [circus.whitening] Found 1.16373s without spikes for whitening matrices...
+2020-02-20 17:27:34,117 DEBUG    [circus.whitening] Because of whitening, need to recompute the thresholds...
+2020-02-20 17:27:34,142 DEBUG    [circus.shared.mpi] Setting data chunk size to 2.5 second
+2020-02-20 17:27:34,143 DEBUG    [circus.whitening] Searching spikes to construct the PCA basis...
+2020-02-20 17:27:34,143 DEBUG    [circus.files.datafile] There are 4 chunks of size 75000
+2020-02-20 17:27:34,143 DEBUG    [circus.files.datafile] The last chunk has size 0
+2020-02-20 17:27:34,269 DEBUG    [circus.whitening] Node 3 has collected 482 waveforms
+2020-02-20 17:27:34,270 DEBUG    [circus.whitening] Node 2 has collected 514 waveforms
+2020-02-20 17:27:34,276 DEBUG    [circus.whitening] Node 1 has collected 494 waveforms
+2020-02-20 17:27:34,327 DEBUG    [circus.whitening] Node 0 has collected 495 waveforms
+2020-02-20 17:27:34,349 DEBUG    [circus.whitening] Found 1985 waveforms over 3200 requested
+2020-02-20 17:27:34,392 INFO     [circus.whitening] A basis with 5 dimensions has been built
+2020-02-20 17:27:34,393 DEBUG    [circus.whitening] The percentage of variance explained is 0.8543169061415068 for negative spikes
+2020-02-20 17:27:34,525 DEBUG    [circus.shared.mpi] MPI detected: ('MPICH', (3, 3, 0))

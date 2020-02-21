@@ -1,0 +1,13 @@
+{
+    "probe_file": "/mnt/c/Users/alexg8/Documents/TreeMazeAnalyses/Analyses/tmp_spykingcircus/probe.prb",
+    "detect_sign": -1,
+    "adjacency_radius": 200,
+    "detect_threshold": 6,
+    "template_width_ms": 3,
+    "filter": 0,
+    "merge_spikes": 1,
+    "auto_merge": 0.75,
+    "num_workers": 4,
+    "whitening_max_elts": 1000,
+    "clustering_max_elts": 10000
+}
