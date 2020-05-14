@@ -1,0 +1,514 @@
+{
+    "1": {
+        "ncs_files": [
+            "CSC0a.ncs",
+            "CSC0b.ncs",
+            "CSC0c.ncs",
+            "CSC0d.ncs"
+        ],
+        "channels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "2": {
+        "ncs_files": [
+            "CSC1a.ncs",
+            "CSC1b.ncs",
+            "CSC1c.ncs",
+            "CSC1d.ncs"
+        ],
+        "channels": [
+            4,
+            5,
+            6,
+            7
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "3": {
+        "ncs_files": [
+            "CSC2a.ncs",
+            "CSC2b.ncs",
+            "CSC2c.ncs",
+            "CSC2d.ncs"
+        ],
+        "channels": [
+            8,
+            9,
+            10,
+            11
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "4": {
+        "ncs_files": [
+            "CSC3a.ncs",
+            "CSC3b.ncs",
+            "CSC3c.ncs",
+            "CSC3d.ncs"
+        ],
+        "channels": [
+            12,
+            13,
+            14,
+            15
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "5": {
+        "ncs_files": [
+            "CSC4a.ncs",
+            "CSC4b.ncs",
+            "CSC4c.ncs",
+            "CSC4d.ncs"
+        ],
+        "channels": [
+            16,
+            17,
+            18,
+            19
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "6": {
+        "ncs_files": [
+            "CSC5a.ncs",
+            "CSC5b.ncs",
+            "CSC5c.ncs",
+            "CSC5d.ncs"
+        ],
+        "channels": [
+            20,
+            21,
+            22,
+            23
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "7": {
+        "ncs_files": [
+            "CSC6a.ncs",
+            "CSC6b.ncs",
+            "CSC6c.ncs",
+            "CSC6d.ncs"
+        ],
+        "channels": [
+            24,
+            25,
+            26,
+            27
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "8": {
+        "ncs_files": [
+            "CSC7a.ncs",
+            "CSC7b.ncs",
+            "CSC7c.ncs",
+            "CSC7d.ncs"
+        ],
+        "channels": [
+            28,
+            29,
+            30,
+            31
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "9": {
+        "ncs_files": [
+            "CSC8a.ncs",
+            "CSC8b.ncs",
+            "CSC8c.ncs",
+            "CSC8d.ncs"
+        ],
+        "channels": [
+            32,
+            33,
+            34,
+            35
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "10": {
+        "ncs_files": [
+            "CSC9a.ncs",
+            "CSC9b.ncs",
+            "CSC9c.ncs",
+            "CSC9d.ncs"
+        ],
+        "channels": [
+            36,
+            37,
+            38,
+            39
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "11": {
+        "ncs_files": [
+            "CSC10a.ncs",
+            "CSC10b.ncs",
+            "CSC10c.ncs",
+            "CSC10d.ncs"
+        ],
+        "channels": [
+            40,
+            41,
+            42,
+            43
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "12": {
+        "ncs_files": [
+            "CSC11a.ncs",
+            "CSC11b.ncs",
+            "CSC11c.ncs",
+            "CSC11d.ncs"
+        ],
+        "channels": [
+            44,
+            45,
+            46,
+            47
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "13": {
+        "ncs_files": [
+            "CSC12a.ncs",
+            "CSC12b.ncs",
+            "CSC12c.ncs",
+            "CSC12d.ncs"
+        ],
+        "channels": [
+            48,
+            49,
+            50,
+            51
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "14": {
+        "ncs_files": [
+            "CSC13a.ncs",
+            "CSC13b.ncs",
+            "CSC13c.ncs",
+            "CSC13d.ncs"
+        ],
+        "channels": [
+            52,
+            53,
+            54,
+            55
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "15": {
+        "ncs_files": [
+            "CSC14a.ncs",
+            "CSC14b.ncs",
+            "CSC14c.ncs",
+            "CSC14d.ncs"
+        ],
+        "channels": [
+            56,
+            57,
+            58,
+            59
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    },
+    "16": {
+        "ncs_files": [
+            "CSC15a.ncs",
+            "CSC15b.ncs",
+            "CSC15c.ncs",
+            "CSC15d.ncs"
+        ],
+        "channels": [
+            60,
+            61,
+            62,
+            63
+        ],
+        "geometry": [
+            [
+                0,
+                0
+            ],
+            [
+                0,
+                20
+            ],
+            [
+                20,
+                0
+            ],
+            [
+                20,
+                20
+            ]
+        ]
+    }
+}
